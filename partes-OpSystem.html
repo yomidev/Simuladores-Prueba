@@ -1,0 +1,998 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Partes de Windows - Arrastrar y soltar</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+        background: #1a1a2e;
+        min-height: 100vh;
+        padding: 16px;
+        color: #fff;
+      }
+      .app {
+        max-width: 960px;
+        margin: 0 auto;
+        background: #252547;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      }
+
+      /* Header */
+      .app-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        background: linear-gradient(135deg, #0078d4, #005a9e);
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .app-header h1 {
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .score {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .score.complete {
+        background: #107c41;
+        animation: pulse 1s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+      }
+
+      .instructions {
+        padding: 12px 20px;
+        background: rgba(255, 255, 255, 0.05);
+        font-size: 13px;
+        color: #ccc;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      /* Windows mockup */
+      .mockup-wrap {
+        padding: 20px;
+      }
+      .win-mockup {
+        width: 100%;
+        height: 400px;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        user-select: none;
+      }
+
+      .win-desktop {
+        flex: 1;
+        min-height: 0;
+        background: linear-gradient(
+          135deg,
+          #0078d4 0%,
+          #005a9e 50%,
+          #003d6b 100%
+        );
+        position: relative;
+        padding: 16px;
+        transition:
+          background 0.2s,
+          box-shadow 0.2s;
+      }
+
+      .desktop-icons {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        width: fit-content;
+        padding: 8px 12px;
+        border-radius: 6px;
+        transition:
+          background 0.2s,
+          box-shadow 0.2s;
+      }
+      .desk-icon {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        width: 70px;
+        color: #fff;
+        font-size: 11px;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+      }
+      .icon-img {
+        width: 38px;
+        height: 38px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+      }
+      .icon-img.recycle {
+        background: linear-gradient(135deg, #4a90d9, #2a6fb0);
+      }
+      .icon-img.folder {
+        background: linear-gradient(135deg, #ffcc00, #e6a800);
+      }
+      .icon-img.pc {
+        background: linear-gradient(135deg, #6ec6ff, #3a8dd0);
+      }
+
+      /* Taskbar */
+      .win-taskbar {
+        height: 50px;
+        flex-shrink: 0;
+        background: rgba(32, 32, 40, 0.92);
+        backdrop-filter: blur(20px);
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        padding: 0 8px;
+        gap: 6px;
+        position: relative;
+        transition: background 0.2s;
+      }
+      .taskbar-center {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        justify-self: center;
+      }
+      .taskbar-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-self: end;
+      }
+
+      .start-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 6px;
+        background: transparent;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .start-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .win-logo-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2px;
+        width: 22px;
+        height: 22px;
+      }
+      .win-logo-grid span {
+        background: #fff;
+        border-radius: 1px;
+      }
+
+      .search-box {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 12px;
+        height: 34px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 17px;
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 12px;
+        min-width: 130px;
+        transition: background 0.2s;
+      }
+      .search-box svg {
+        width: 14px;
+        height: 14px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2;
+      }
+
+      .pinned-apps {
+        display: flex;
+        gap: 4px;
+        padding: 0 4px;
+        border-radius: 6px;
+        transition: background 0.2s;
+      }
+      .app-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        transition: background 0.2s;
+      }
+      .app-icon.explorer {
+        background: linear-gradient(135deg, #ffd700, #d4a500);
+      }
+      .app-icon.browser {
+        background: linear-gradient(135deg, #0067b8, #005a9e);
+      }
+      .app-icon.mail {
+        background: linear-gradient(135deg, #0078d4, #005a9e);
+      }
+      .app-icon.editor {
+        background: linear-gradient(135deg, #68217a, #4a175a);
+      }
+
+      .tray-icons {
+        display: flex;
+        gap: 8px;
+        padding: 0 8px;
+        height: 36px;
+        align-items: center;
+        border-radius: 4px;
+        color: #fff;
+        font-size: 14px;
+        transition: background 0.2s;
+      }
+      .clock {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: center;
+        padding: 0 8px;
+        height: 36px;
+        border-radius: 4px;
+        color: #fff;
+        line-height: 1.2;
+        transition: background 0.2s;
+        min-width: 70px;
+      }
+      .clock .time {
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .clock .date {
+        font-size: 10px;
+        opacity: 0.85;
+      }
+
+      /* Zonas y estados */
+      [data-zone] {
+        position: relative;
+      }
+
+      body.dragging [data-zone]:not(.solved) {
+        outline: 1px dashed rgba(255, 193, 7, 0.6);
+        outline-offset: 2px;
+      }
+      [data-zone].hover-zone {
+        outline: 2px solid #ffc107 !important;
+        outline-offset: 2px;
+        background: rgba(255, 193, 7, 0.15) !important;
+        box-shadow: 0 0 20px rgba(255, 193, 7, 0.4);
+      }
+      [data-zone].solved {
+        outline: 2px solid #107c41;
+        outline-offset: 2px;
+      }
+      [data-zone].hint-zone {
+        animation: hintPulse 0.9s ease infinite;
+      }
+      @keyframes hintPulse {
+        0%,
+        100% {
+          outline: 3px solid rgba(255, 193, 7, 0);
+          outline-offset: 2px;
+        }
+        50% {
+          outline: 3px solid rgba(255, 193, 7, 0.9);
+          outline-offset: 2px;
+        }
+      }
+
+      .solved-badge {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 22px;
+        height: 22px;
+        background: #107c41;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: bold;
+        z-index: 100;
+        pointer-events: none;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        animation: pop 0.35s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      }
+      @keyframes pop {
+        0% {
+          transform: scale(0);
+        }
+        60% {
+          transform: scale(1.3);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      /* Chips */
+      .chips-area {
+        padding: 16px 20px 20px;
+        background: rgba(0, 0, 0, 0.2);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .chips-area h3 {
+        font-size: 12px;
+        font-weight: 600;
+        color: #aaa;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 10px;
+      }
+      .chips-pool {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        min-height: 40px;
+      }
+
+      .chip {
+        padding: 8px 14px;
+        background: linear-gradient(135deg, #ffc107, #ffa000);
+        color: #1a1a2e;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: grab;
+        user-select: none;
+        touch-action: none;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s,
+          opacity 0.3s;
+        white-space: nowrap;
+      }
+      .chip:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      }
+      .chip:active {
+        cursor: grabbing;
+      }
+      .chip.dragging {
+        opacity: 0.35;
+      }
+      .chip.placed {
+        opacity: 0.25;
+        pointer-events: none;
+        filter: grayscale(0.5);
+        cursor: default;
+      }
+      .chip.placed::after {
+        content: " ✓";
+        color: #107c41;
+        font-weight: bold;
+      }
+      .chip.shake {
+        animation: shake 0.4s;
+      }
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-6px);
+        }
+        75% {
+          transform: translateX(6px);
+        }
+      }
+      .chip.hint-pulse {
+        animation: chipPulse 0.9s ease infinite;
+        box-shadow:
+          0 0 20px rgba(255, 193, 7, 0.9),
+          0 2px 8px rgba(0, 0, 0, 0.3);
+      }
+      @keyframes chipPulse {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.08);
+        }
+      }
+
+      .chip.ghost {
+        opacity: 0.9;
+        transform: rotate(-3deg) scale(1.05);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+        transition: none !important;
+        cursor: grabbing;
+        pointer-events: none;
+      }
+
+      /* Actions */
+      .actions {
+        display: flex;
+        gap: 8px;
+        padding: 12px 20px;
+        background: rgba(0, 0, 0, 0.3);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        flex-wrap: wrap;
+      }
+      .btn {
+        padding: 9px 16px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        font-family: inherit;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: background 0.15s;
+      }
+      .btn:hover {
+        background: rgba(255, 255, 255, 0.18);
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+      .btn.primary {
+        background: #0078d4;
+        border-color: #0078d4;
+        font-weight: 600;
+      }
+      .btn.primary:hover {
+        background: #0067b8;
+      }
+
+      /* Feedback */
+      .feedback {
+        padding: 12px 20px;
+        background: #0078d4;
+        color: #fff;
+        font-size: 13px;
+        display: none;
+      }
+      .feedback.show {
+        display: block;
+        animation: slideDown 0.3s ease;
+      }
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .feedback.success {
+        background: #107c41;
+      }
+      .feedback.error {
+        background: #c00000;
+      }
+      .feedback.info {
+        background: #0078d4;
+      }
+      .feedback strong {
+        display: block;
+        margin-bottom: 3px;
+        font-size: 14px;
+      }
+
+      /* Victory */
+      .victory {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.75);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        backdrop-filter: blur(4px);
+        animation: fadeIn 0.3s ease;
+      }
+      .victory.show {
+        display: flex;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .victory-card {
+        background: linear-gradient(135deg, #0078d4, #005a9e);
+        padding: 40px 50px;
+        border-radius: 16px;
+        text-align: center;
+        color: #fff;
+        animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        max-width: 90%;
+      }
+      @keyframes bounceIn {
+        0% {
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        50% {
+          transform: scale(1.05);
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      .victory-card h2 {
+        font-size: 30px;
+        margin-bottom: 12px;
+      }
+      .victory-card p {
+        font-size: 15px;
+        margin-bottom: 20px;
+        opacity: 0.95;
+      }
+      .victory-card .btn {
+        background: #fff;
+        color: #0078d4;
+        font-weight: 600;
+        border-color: #fff;
+      }
+      .victory-card .btn:hover {
+        background: #f0f0f0;
+      }
+
+      @media (max-width: 640px) {
+        body {
+          padding: 8px;
+        }
+        .app-header {
+          padding: 12px 14px;
+        }
+        .app-header h1 {
+          font-size: 15px;
+        }
+        .mockup-wrap {
+          padding: 12px;
+        }
+        .win-mockup {
+          height: 340px;
+        }
+        .win-taskbar {
+          height: 44px;
+        }
+        .start-btn,
+        .app-icon {
+          width: 32px;
+          height: 32px;
+        }
+        .search-box {
+          min-width: 70px;
+          padding: 0 8px;
+        }
+        .search-box span {
+          display: none;
+        }
+        .clock .date {
+          display: none;
+        }
+        .chip {
+          padding: 7px 11px;
+          font-size: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="app-header">
+        <h1>🖥️ Partes del Sistema Operativo Windows</h1>
+        <div class="score" id="score">0 / 8 correctas</div>
+      </header>
+
+      <div class="instructions">
+        📌 Arrastra cada etiqueta amarilla hasta la parte de Windows que
+        corresponde. Si aciertas, la zona se marcará con un ✓.
+      </div>
+
+      <div class="mockup-wrap">
+        <div class="win-mockup">
+          <div class="win-desktop" data-zone="escritorio">
+            <div class="desktop-icons" data-zone="iconos">
+              <div class="desk-icon">
+                <div class="icon-img recycle">🗑️</div>
+                <span>Papelera</span>
+              </div>
+              <div class="desk-icon">
+                <div class="icon-img folder">📁</div>
+                <span>Documentos</span>
+              </div>
+              <div class="desk-icon">
+                <div class="icon-img pc">💻</div>
+                <span>Este equipo</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="win-taskbar" data-zone="barra">
+            <div></div>
+            <div class="taskbar-center">
+              <button class="start-btn" data-zone="inicio" title="Inicio">
+                <div class="win-logo-grid">
+                  <span></span><span></span> <span></span><span></span>
+                </div>
+              </button>
+              <div class="search-box" data-zone="busqueda">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="11" cy="11" r="7" />
+                  <line x1="16" y1="16" x2="21" y2="21" />
+                </svg>
+                <span>Buscar</span>
+              </div>
+              <div class="pinned-apps" data-zone="ancladas">
+                <div class="app-icon explorer">📁</div>
+                <div class="app-icon browser">🌐</div>
+                <div class="app-icon mail">✉️</div>
+                <div class="app-icon editor">📝</div>
+              </div>
+            </div>
+            <div class="taskbar-right">
+              <div class="tray-icons" data-zone="notificaciones">
+                <span>📶</span>
+                <span>🔊</span>
+                <span>🔋</span>
+              </div>
+              <div class="clock" data-zone="reloj">
+                <div class="time">14:35</div>
+                <div class="date">21/10/2026</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chips-area">
+        <h3>Etiquetas por asignar</h3>
+        <div class="chips-pool" id="chipsPool"></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="btnHint">💡 Pista</button>
+        <button class="btn" id="btnReset">↺ Reiniciar</button>
+      </div>
+
+      <div class="feedback" id="feedback"></div>
+    </div>
+
+    <div class="victory" id="victory">
+      <div class="victory-card">
+        <h2>🎉 ¡Felicidades!</h2>
+        <p>Has identificado correctamente todas las partes de Windows.</p>
+        <button class="btn" onclick="resetGame()">Jugar de nuevo</button>
+      </div>
+    </div>
+
+    <script>
+      /* ============ CONFIG ============ */
+      const PARTS = [
+        { id: "escritorio", name: "Escritorio" },
+        { id: "iconos", name: "Iconos del escritorio" },
+        { id: "barra", name: "Barra de tareas" },
+        { id: "inicio", name: "Botón Inicio" },
+        { id: "busqueda", name: "Cuadro de búsqueda" },
+        { id: "ancladas", name: "Aplicaciones ancladas" },
+        { id: "notificaciones", name: "Área de notificaciones" },
+        { id: "reloj", name: "Reloj y fecha" },
+      ];
+
+      /* ============ STATE ============ */
+      const state = {
+        solved: new Set(),
+        draggedChip: null,
+        ghost: null,
+        offsetX: 0,
+        offsetY: 0,
+      };
+
+      /* ============ DOM ============ */
+      const el = {
+        chipsPool: document.getElementById("chipsPool"),
+        score: document.getElementById("score"),
+        feedback: document.getElementById("feedback"),
+        victory: document.getElementById("victory"),
+        btnHint: document.getElementById("btnHint"),
+        btnReset: document.getElementById("btnReset"),
+      };
+
+      /* ============ UTILS ============ */
+      function shuffle(arr) {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+      }
+
+      function updateScore() {
+        el.score.textContent = `${state.solved.size} / ${PARTS.length} correctas`;
+        if (state.solved.size === PARTS.length) {
+          el.score.classList.add("complete");
+          setTimeout(() => el.victory.classList.add("show"), 400);
+        }
+      }
+
+      /* ============ INIT ============ */
+      function initGame() {
+        state.solved.clear();
+        state.draggedChip = null;
+        if (state.ghost) {
+          state.ghost.remove();
+          state.ghost = null;
+        }
+
+        el.chipsPool.innerHTML = "";
+        el.score.classList.remove("complete");
+        el.victory.classList.remove("show");
+        document.body.classList.remove("dragging");
+        hideFeedback();
+
+        // Crear chips en orden aleatorio
+        shuffle(PARTS).forEach((part) => {
+          const chip = document.createElement("div");
+          chip.className = "chip";
+          chip.textContent = part.name;
+          chip.dataset.label = part.id;
+          chip.addEventListener("pointerdown", onPointerDown);
+          el.chipsPool.appendChild(chip);
+        });
+
+        // Limpiar zonas
+        document.querySelectorAll("[data-zone]").forEach((z) => {
+          z.classList.remove("solved", "hover-zone", "hint-zone");
+          const badge = z.querySelector(".solved-badge");
+          if (badge) badge.remove();
+        });
+
+        updateScore();
+      }
+
+      /* ============ DRAG & DROP ============ */
+      function onPointerDown(e) {
+        const chip = e.target.closest(".chip");
+        if (!chip || chip.classList.contains("placed")) return;
+
+        e.preventDefault();
+
+        state.draggedChip = chip;
+        const rect = chip.getBoundingClientRect();
+        state.offsetX = e.clientX - rect.left;
+        state.offsetY = e.clientY - rect.top;
+
+        // Crear "fantasma" que sigue al puntero
+        const ghost = chip.cloneNode(true);
+        ghost.className = "chip ghost";
+        ghost.style.position = "fixed";
+        ghost.style.left = rect.left + "px";
+        ghost.style.top = rect.top + "px";
+        ghost.style.width = rect.width + "px";
+        ghost.style.height = rect.height + "px";
+        ghost.style.margin = "0";
+        ghost.style.zIndex = "9999";
+        document.body.appendChild(ghost);
+        state.ghost = ghost;
+
+        chip.classList.add("dragging");
+        document.body.classList.add("dragging");
+
+        document.addEventListener("pointermove", onPointerMove);
+        document.addEventListener("pointerup", onPointerUp);
+        document.addEventListener("pointercancel", onPointerUp);
+      }
+
+      function onPointerMove(e) {
+        if (!state.ghost) return;
+        state.ghost.style.left = e.clientX - state.offsetX + "px";
+        state.ghost.style.top = e.clientY - state.offsetY + "px";
+
+        // Resaltar zona bajo el puntero
+        document
+          .querySelectorAll(".hover-zone")
+          .forEach((z) => z.classList.remove("hover-zone"));
+        const elem = document.elementFromPoint(e.clientX, e.clientY);
+        const zone = elem?.closest("[data-zone]");
+        if (zone && !zone.classList.contains("solved")) {
+          zone.classList.add("hover-zone");
+        }
+      }
+
+      function onPointerUp(e) {
+        document.removeEventListener("pointermove", onPointerMove);
+        document.removeEventListener("pointerup", onPointerUp);
+        document.removeEventListener("pointercancel", onPointerUp);
+
+        if (!state.ghost || !state.draggedChip) return;
+
+        // Encontrar zona antes de eliminar el fantasma
+        const elem = document.elementFromPoint(e.clientX, e.clientY);
+        const zone = elem?.closest("[data-zone]");
+
+        state.ghost.remove();
+        state.ghost = null;
+
+        document
+          .querySelectorAll(".hover-zone")
+          .forEach((z) => z.classList.remove("hover-zone"));
+        document.body.classList.remove("dragging");
+
+        const chip = state.draggedChip;
+        state.draggedChip = null;
+        chip.classList.remove("dragging");
+
+        if (!zone) {
+          shakeChip(chip);
+          showFeedback(
+            "error",
+            "❌ Zona inválida",
+            "Suelta la etiqueta sobre una parte de Windows.",
+          );
+          return;
+        }
+        if (zone.classList.contains("solved")) {
+          shakeChip(chip);
+          showFeedback(
+            "info",
+            "ℹ️ Ya está resuelta",
+            "Esa zona ya tiene su etiqueta. Prueba con otra.",
+          );
+          return;
+        }
+        if (zone.dataset.zone === chip.dataset.label) {
+          solveZone(zone, chip);
+        } else {
+          shakeChip(chip);
+          showFeedback(
+            "error",
+            "❌ No es la parte correcta",
+            `La etiqueta "${chip.textContent}" no corresponde a esta zona.`,
+          );
+        }
+      }
+
+      function shakeChip(chip) {
+        chip.classList.add("shake");
+        setTimeout(() => chip.classList.remove("shake"), 400);
+      }
+
+      function solveZone(zone, chip) {
+        zone.classList.add("solved");
+        chip.classList.add("placed");
+        state.solved.add(zone.dataset.zone);
+
+        const badge = document.createElement("div");
+        badge.className = "solved-badge";
+        badge.textContent = "✓";
+        zone.appendChild(badge);
+
+        updateScore();
+
+        if (state.solved.size < PARTS.length) {
+          showFeedback(
+            "success",
+            "✅ ¡Correcto!",
+            `"${chip.textContent}" identificado correctamente.`,
+          );
+        } else {
+          hideFeedback();
+        }
+      }
+
+      /* ============ HINT ============ */
+      el.btnHint.addEventListener("click", () => {
+        const unsolved = [...document.querySelectorAll(".chip:not(.placed)")];
+        if (unsolved.length === 0) return;
+
+        const chip = unsolved[0];
+        const zone = document.querySelector(
+          `[data-zone="${chip.dataset.label}"]:not(.solved)`,
+        );
+        if (!zone) return;
+
+        chip.classList.add("hint-pulse");
+        zone.classList.add("hint-zone");
+        zone.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+        showFeedback(
+          "info",
+          "💡 Pista",
+          `La etiqueta "${chip.textContent}" corresponde a la zona que parpadea en amarillo.`,
+        );
+
+        setTimeout(() => {
+          chip.classList.remove("hint-pulse");
+          zone.classList.remove("hint-zone");
+        }, 2500);
+      });
+
+      /* ============ RESET ============ */
+      el.btnReset.addEventListener("click", () => {
+        if (
+          state.solved.size > 0 &&
+          !confirm("¿Reiniciar el ejercicio? Se perderá el progreso.")
+        )
+          return;
+        initGame();
+      });
+
+      function resetGame() {
+        initGame();
+      }
+
+      /* ============ FEEDBACK ============ */
+      function showFeedback(type, title, text) {
+        el.feedback.className = "feedback show " + type;
+        el.feedback.innerHTML = `<strong>${escapeHtml(title)}</strong>${escapeHtml(text)}`;
+        clearTimeout(showFeedback._timer);
+        showFeedback._timer = setTimeout(hideFeedback, 3500);
+      }
+      function hideFeedback() {
+        el.feedback.classList.remove("show");
+      }
+      function escapeHtml(s) {
+        return String(s).replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      }
+
+      /* ============ START ============ */
+      initGame();
+    </script>
+  </body>
+</html>
