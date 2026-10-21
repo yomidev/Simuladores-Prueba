@@ -1,0 +1,1818 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Laboratorio de Fórmulas de Excel</title>
+    <style>
+      :root {
+        --green: #107c41;
+        --green-dark: #0e6b39;
+        --green-light: #e8f5e9;
+        --yellow: #fff4ce;
+        --yellow-border: #f2a900;
+        --border: #d4d4d4;
+        --header-bg: #f5f5f5;
+        --text: #323130;
+        --text-muted: #605e5c;
+        --red: #c00000;
+        --red-bg: #fde7e9;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+        background: #ededed;
+        padding: 16px;
+        color: var(--text);
+        font-size: 13px;
+      }
+      .lab {
+        max-width: 980px;
+        margin: 0 auto;
+        background: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+      }
+
+      /* Header */
+      .lab-header {
+        background: var(--green);
+        color: #fff;
+        padding: 14px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .lab-header h1 {
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .lab-header .progress-info {
+        font-size: 12px;
+        opacity: 0.95;
+      }
+
+      /* Exercise tabs */
+      .ex-tabs {
+        display: flex;
+        background: var(--green);
+        padding: 0 20px;
+        overflow-x: auto;
+        gap: 2px;
+      }
+      .ex-tab {
+        padding: 8px 14px;
+        color: rgba(255, 255, 255, 0.85);
+        cursor: pointer;
+        font-size: 12px;
+        white-space: nowrap;
+        border-radius: 4px 4px 0 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        user-select: none;
+      }
+      .ex-tab:hover {
+        background: rgba(255, 255, 255, 0.12);
+      }
+      .ex-tab.active {
+        background: #fff;
+        color: var(--green);
+        font-weight: 600;
+      }
+      .ex-tab.done::before {
+        content: "✓";
+        background: #fff;
+        color: var(--green);
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: bold;
+      }
+      .ex-tab.done.active::before {
+        background: var(--green);
+        color: #fff;
+      }
+      .ex-tab .num {
+        opacity: 0.7;
+        font-size: 11px;
+      }
+
+      /* Content */
+      .content {
+        padding: 18px 20px 20px;
+      }
+      .ex-header {
+        margin-bottom: 14px;
+      }
+      .ex-header h2 {
+        font-size: 17px;
+        color: var(--green);
+        margin-bottom: 6px;
+      }
+      .ex-header p {
+        font-size: 13px;
+        color: var(--text);
+        line-height: 1.5;
+        margin-bottom: 6px;
+      }
+      .ex-header .instruction {
+        background: var(--green-light);
+        border-left: 3px solid var(--green);
+        padding: 8px 12px;
+        border-radius: 0 4px 4px 0;
+        font-size: 13px;
+        margin-top: 8px;
+      }
+
+      /* Formula bar */
+      .formulabar {
+        display: flex;
+        border: 1px solid var(--border);
+        border-radius: 4px 4px 0 0;
+        border-bottom: none;
+        background: #fff;
+        height: 30px;
+        margin-top: 14px;
+      }
+      .cell-ref {
+        width: 70px;
+        border-right: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        background: #fafafa;
+      }
+      .fx-btn {
+        width: 34px;
+        border-right: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-muted);
+        font-family: Georgia, serif;
+        font-style: italic;
+        font-size: 13px;
+        background: #fafafa;
+      }
+      .formula-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        padding: 0 10px;
+        font-family: Calibri, "Segoe UI", sans-serif;
+        font-size: 13px;
+        color: var(--text);
+        background: transparent;
+      }
+      .formula-input:focus {
+        background: #fffdf5;
+      }
+
+      /* Spreadsheet */
+      .sheet-wrap {
+        border: 1px solid var(--border);
+        border-radius: 0 0 4px 4px;
+        overflow: auto;
+        max-height: 380px;
+        background: #fff;
+      }
+      .sheet {
+        border-collapse: collapse;
+        table-layout: fixed;
+        font-family: Calibri, "Segoe UI", sans-serif;
+        font-size: 13px;
+        min-width: 100%;
+      }
+      .sheet th,
+      .sheet td {
+        border: 1px solid var(--border);
+        height: 26px;
+        padding: 0 6px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        font-weight: normal;
+      }
+      .sheet thead th {
+        background: var(--header-bg);
+        color: var(--text-muted);
+        text-align: center;
+        font-size: 11px;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        height: 22px;
+        width: 100px;
+      }
+      .sheet thead th.corner {
+        width: 34px;
+        position: sticky;
+        left: 0;
+        top: 0;
+        z-index: 6;
+      }
+      .sheet tbody th {
+        background: var(--header-bg);
+        color: var(--text-muted);
+        text-align: center;
+        font-size: 11px;
+        font-weight: 600;
+        position: sticky;
+        left: 0;
+        z-index: 4;
+        width: 34px;
+      }
+      .sheet td {
+        min-width: 100px;
+      }
+      .sheet td.num {
+        text-align: right;
+        padding-right: 8px;
+      }
+      .sheet td.bold {
+        font-weight: 600;
+      }
+      .sheet td.answer-cell {
+        background: var(--yellow);
+        padding: 0;
+        position: relative;
+      }
+      .sheet td.answer-cell::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border: 2px solid var(--yellow-border);
+        pointer-events: none;
+        border-radius: 2px;
+      }
+      .answer-input {
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: transparent;
+        padding: 0 6px;
+        font-family: Calibri, "Segoe UI", sans-serif;
+        font-size: 13px;
+        color: var(--text);
+        outline: none;
+      }
+      .answer-input::placeholder {
+        color: #b8860b;
+        font-style: italic;
+        font-size: 12px;
+      }
+
+      /* Actions */
+      .actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+        flex-wrap: wrap;
+      }
+      .btn {
+        padding: 8px 16px;
+        border: 1px solid var(--border);
+        background: #fff;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        color: var(--text);
+        font-family: inherit;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
+      }
+      .btn:hover {
+        background: #f3f3f3;
+        border-color: #b4b4b4;
+      }
+      .btn:active {
+        background: #e6e6e6;
+      }
+      .btn.primary {
+        background: var(--green);
+        color: #fff;
+        border-color: var(--green);
+        font-weight: 600;
+      }
+      .btn.primary:hover {
+        background: var(--green-dark);
+        border-color: var(--green-dark);
+      }
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: #f3f3f3;
+      }
+      .btn.nav {
+        margin-left: auto;
+      }
+
+      /* Feedback */
+      .feedback {
+        margin-top: 16px;
+        display: none;
+      }
+      .feedback.show {
+        display: block;
+        animation: slideIn 0.25s ease;
+      }
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .fb-box {
+        border-radius: 6px;
+        padding: 12px 16px;
+        font-size: 13px;
+        border-left: 4px solid;
+      }
+      .fb-box.success {
+        background: #e8f5e9;
+        border-color: var(--green);
+      }
+      .fb-box.partial {
+        background: #fff8e1;
+        border-color: #f2a900;
+      }
+      .fb-box.error {
+        background: #fde7e9;
+        border-color: var(--red);
+      }
+      .fb-box h4 {
+        margin-bottom: 6px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .fb-box.success h4 {
+        color: var(--green);
+      }
+      .fb-box.partial h4 {
+        color: #b8860b;
+      }
+      .fb-box.error h4 {
+        color: var(--red);
+      }
+
+      .test-results {
+        margin-top: 10px;
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 12px;
+        background: #fff;
+        border-radius: 4px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+      }
+      .test-results th,
+      .test-results td {
+        padding: 6px 10px;
+        text-align: left;
+        border-bottom: 1px solid #eeeeee;
+      }
+      .test-results th {
+        background: #f5f5f5;
+        font-weight: 600;
+        color: var(--text-muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      .test-results tr:last-child td {
+        border-bottom: none;
+      }
+      .test-results .pass {
+        color: var(--green);
+        font-weight: 600;
+      }
+      .test-results .fail {
+        color: var(--red);
+        font-weight: 600;
+      }
+      .test-results .expected {
+        font-family: "Consolas", monospace;
+        color: var(--text-muted);
+      }
+      .test-results .got {
+        font-family: "Consolas", monospace;
+      }
+
+      .hint-box {
+        margin-top: 10px;
+        background: #e7f3ff;
+        border-left: 4px solid #0078d4;
+        border-radius: 6px;
+        padding: 10px 14px;
+        font-size: 13px;
+        color: var(--text);
+        line-height: 1.5;
+      }
+      .hint-box strong {
+        color: #005a9e;
+      }
+      .hint-box .hint-step {
+        display: block;
+        margin-top: 4px;
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+      .hint-box code {
+        background: #fff;
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-family: "Consolas", monospace;
+        font-size: 12px;
+        border: 1px solid #d0e7ff;
+      }
+
+      @media (max-width: 600px) {
+        .lab-header h1 {
+          font-size: 15px;
+        }
+        .content {
+          padding: 12px;
+        }
+        .btn {
+          padding: 7px 12px;
+          font-size: 12px;
+        }
+        .ex-header h2 {
+          font-size: 15px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="lab">
+      <div class="lab-header">
+        <h1>🧪 Laboratorio de Fórmulas de Excel</h1>
+        <div class="progress-info" id="progressInfo">
+          0 de 6 ejercicios completados
+        </div>
+      </div>
+
+      <div class="ex-tabs" id="exTabs"></div>
+
+      <div class="content">
+        <div class="ex-header">
+          <h2 id="exTitle">Cargando…</h2>
+          <p id="exDesc"></p>
+          <div class="instruction" id="exInstruction"></div>
+        </div>
+
+        <div class="formulabar">
+          <div class="cell-ref" id="cellRef">A1</div>
+          <div class="fx-btn">fx</div>
+          <input
+            type="text"
+            class="formula-input"
+            id="formulaInput"
+            placeholder="Escribe tu fórmula aquí, por ejemplo: =SUMA(B2:B5)"
+            autocomplete="off"
+            spellcheck="false"
+          />
+        </div>
+
+        <div class="sheet-wrap">
+          <table class="sheet" id="sheet"></table>
+        </div>
+
+        <div class="actions">
+          <button class="btn primary" id="btnCheck">✓ Comprobar</button>
+          <button class="btn" id="btnHint">💡 Ver pista</button>
+          <button class="btn" id="btnReset">↺ Reiniciar</button>
+          <button class="btn nav" id="btnPrev">← Anterior</button>
+          <button class="btn nav" id="btnNext">Siguiente →</button>
+        </div>
+
+        <div class="feedback" id="feedback"></div>
+      </div>
+    </div>
+
+    <script>
+      /* ============================================================
+   1. UTILIDADES
+   ============================================================ */
+      function toNum(v) {
+        if (typeof v === "number") return v;
+        if (typeof v === "boolean") return v ? 1 : 0;
+        if (typeof v === "string") {
+          if (v === "") return 0;
+          const n = Number(v);
+          return isNaN(n) ? 0 : n;
+        }
+        return 0;
+      }
+      function colToNum(col) {
+        let n = 0;
+        for (const c of col) n = n * 26 + (c.charCodeAt(0) - 64);
+        return n;
+      }
+      function numToCol(n) {
+        let s = "";
+        while (n > 0) {
+          const r = (n - 1) % 26;
+          s = String.fromCharCode(65 + r) + s;
+          n = Math.floor((n - 1) / 26);
+        }
+        return s;
+      }
+      function flattenArgs(args) {
+        const out = [];
+        for (const a of args) {
+          if (a && a.type === "range") out.push(...a.flat);
+          else if (Array.isArray(a)) out.push(...a);
+          else out.push(a);
+        }
+        return out;
+      }
+      function matchExact(a, b) {
+        if (typeof a === "number" && typeof b === "number")
+          return Math.abs(a - b) < 0.0001;
+        return (
+          String(a).toLowerCase().trim() === String(b).toLowerCase().trim()
+        );
+      }
+
+      /* ============================================================
+   2. TOKENIZER
+   ============================================================ */
+      function tokenize(str) {
+        const tokens = [];
+        let i = 0;
+        while (i < str.length) {
+          const c = str[i];
+          if (/\s/.test(c)) {
+            i++;
+            continue;
+          }
+
+          // Números
+          if (/[0-9]/.test(c) || (c === "." && /[0-9]/.test(str[i + 1]))) {
+            let num = "";
+            while (i < str.length && /[0-9.]/.test(str[i])) num += str[i++];
+            tokens.push({ type: "number", value: parseFloat(num) });
+            continue;
+          }
+
+          // Cadenas
+          if (c === '"') {
+            let s = "";
+            i++;
+            while (i < str.length && str[i] !== '"') s += str[i++];
+            i++;
+            tokens.push({ type: "string", value: s });
+            continue;
+          }
+
+          // Nombres, funciones, celdas, rangos
+          if (/[A-Za-zÁÉÍÓÚáéíóúÑñ]/.test(c)) {
+            let word = "";
+            while (i < str.length && /[A-Za-zÁÉÍÓÚáéíóúÑñ0-9_.]/.test(str[i]))
+              word += str[i++];
+            const upper = word.toUpperCase();
+
+            if (str[i] === "(") {
+              tokens.push({ type: "function", value: upper });
+              continue;
+            }
+            if (str[i] === ":") {
+              i++;
+              let end = "";
+              while (i < str.length && /[A-Za-z0-9]/.test(str[i]))
+                end += str[i++];
+              tokens.push({
+                type: "range",
+                value: upper + ":" + end.toUpperCase(),
+              });
+              continue;
+            }
+            if (/^[A-Z]+[0-9]+$/.test(upper)) {
+              tokens.push({ type: "cell", value: upper });
+              continue;
+            }
+            if (upper === "VERDADERO" || upper === "TRUE") {
+              tokens.push({ type: "boolean", value: true });
+              continue;
+            }
+            if (upper === "FALSO" || upper === "FALSE") {
+              tokens.push({ type: "boolean", value: false });
+              continue;
+            }
+
+            tokens.push({ type: "name", value: word });
+            continue;
+          }
+
+          // Operadores compuestos
+          if (c === "<" && str[i + 1] === "=") {
+            tokens.push({ type: "op", value: "<=" });
+            i += 2;
+            continue;
+          }
+          if (c === ">" && str[i + 1] === "=") {
+            tokens.push({ type: "op", value: ">=" });
+            i += 2;
+            continue;
+          }
+          if (c === "<" && str[i + 1] === ">") {
+            tokens.push({ type: "op", value: "<>" });
+            i += 2;
+            continue;
+          }
+
+          // Operadores simples
+          if (
+            [
+              "+",
+              "-",
+              "*",
+              "/",
+              "^",
+              "(",
+              ")",
+              ",",
+              "<",
+              ">",
+              "=",
+              "&",
+            ].includes(c)
+          ) {
+            tokens.push({ type: "op", value: c });
+            i++;
+            continue;
+          }
+          // Punto y coma = separador de argumentos (Excel en español)
+          if (c === ";") {
+            tokens.push({ type: "op", value: "," });
+            i++;
+            continue;
+          }
+
+          throw new Error('Carácter inesperado: "' + c + '"');
+        }
+        return tokens;
+      }
+
+      /* ============================================================
+   3. PARSER + EVALUADOR
+   ============================================================ */
+      class FormulaParser {
+        constructor(tokens, getCell) {
+          this.tokens = tokens;
+          this.pos = 0;
+          this.getCell = getCell;
+        }
+        peek() {
+          return this.tokens[this.pos];
+        }
+        consume() {
+          return this.tokens[this.pos++];
+        }
+        expect(type, value) {
+          const t = this.consume();
+          if (
+            !t ||
+            t.type !== type ||
+            (value !== undefined && t.value !== value)
+          )
+            throw new Error('Se esperaba "' + (value || type) + '"');
+          return t;
+        }
+        parseExpression() {
+          return this.parseComparison();
+        }
+
+        parseComparison() {
+          let left = this.parseConcat();
+          while (
+            this.peek() &&
+            this.peek().type === "op" &&
+            ["=", "<>", "<", ">", "<=", ">="].includes(this.peek().value)
+          ) {
+            const op = this.consume().value;
+            const right = this.parseConcat();
+            left = this.applyComparison(op, left, right);
+          }
+          return left;
+        }
+        parseConcat() {
+          let left = this.parseAdd();
+          while (
+            this.peek() &&
+            this.peek().type === "op" &&
+            this.peek().value === "&"
+          ) {
+            this.consume();
+            left = String(left) + String(this.parseAdd());
+          }
+          return left;
+        }
+        parseAdd() {
+          let left = this.parseMul();
+          while (
+            this.peek() &&
+            this.peek().type === "op" &&
+            ["+", "-"].includes(this.peek().value)
+          ) {
+            const op = this.consume().value;
+            const right = this.parseMul();
+            left =
+              op === "+"
+                ? toNum(left) + toNum(right)
+                : toNum(left) - toNum(right);
+          }
+          return left;
+        }
+        parseMul() {
+          let left = this.parsePow();
+          while (
+            this.peek() &&
+            this.peek().type === "op" &&
+            ["*", "/"].includes(this.peek().value)
+          ) {
+            const op = this.consume().value;
+            const right = this.parsePow();
+            if (op === "*") left = toNum(left) * toNum(right);
+            else {
+              const d = toNum(right);
+              if (d === 0) throw new Error("#¡DIV/0!");
+              left = toNum(left) / d;
+            }
+          }
+          return left;
+        }
+        parsePow() {
+          let left = this.parseUnary();
+          while (
+            this.peek() &&
+            this.peek().type === "op" &&
+            this.peek().value === "^"
+          ) {
+            this.consume();
+            left = Math.pow(toNum(left), toNum(this.parseUnary()));
+          }
+          return left;
+        }
+        parseUnary() {
+          if (
+            this.peek() &&
+            this.peek().type === "op" &&
+            this.peek().value === "-"
+          ) {
+            this.consume();
+            return -toNum(this.parseUnary());
+          }
+          if (
+            this.peek() &&
+            this.peek().type === "op" &&
+            this.peek().value === "+"
+          ) {
+            this.consume();
+            return toNum(this.parseUnary());
+          }
+          return this.parseAtom();
+        }
+        parseAtom() {
+          const t = this.peek();
+          if (!t) throw new Error("Fórmula incompleta");
+          if (t.type === "number") {
+            this.consume();
+            return t.value;
+          }
+          if (t.type === "string") {
+            this.consume();
+            return t.value;
+          }
+          if (t.type === "boolean") {
+            this.consume();
+            return t.value;
+          }
+          if (t.type === "cell") {
+            this.consume();
+            return this.getCell(t.value);
+          }
+          if (t.type === "range") {
+            this.consume();
+            return this.expandRange(t.value);
+          }
+
+          if (t.type === "function") {
+            this.consume();
+            this.expect("op", "(");
+            const args = [];
+            if (
+              this.peek() &&
+              !(this.peek().type === "op" && this.peek().value === ")")
+            ) {
+              args.push(this.parseExpression());
+              while (
+                this.peek() &&
+                this.peek().type === "op" &&
+                this.peek().value === ","
+              ) {
+                this.consume();
+                args.push(this.parseExpression());
+              }
+            }
+            this.expect("op", ")");
+            return this.callFunction(t.value, args);
+          }
+          if (t.type === "op" && t.value === "(") {
+            this.consume();
+            const v = this.parseExpression();
+            this.expect("op", ")");
+            return v;
+          }
+          throw new Error("Símbolo inesperado");
+        }
+        expandRange(range) {
+          const [s, e] = range.split(":");
+          const ms = s.match(/^([A-Z]+)(\d+)$/);
+          const me = e.match(/^([A-Z]+)(\d+)$/);
+          if (!ms || !me) throw new Error("Rango inválido: " + range);
+          const c1 = colToNum(ms[1]),
+            r1 = parseInt(ms[2]);
+          const c2 = colToNum(me[1]),
+            r2 = parseInt(me[2]);
+          const minC = Math.min(c1, c2),
+            maxC = Math.max(c1, c2);
+          const minR = Math.min(r1, r2),
+            maxR = Math.max(r1, r2);
+          const cells = [];
+          const flat = [];
+          for (let r = minR; r <= maxR; r++) {
+            const row = [];
+            for (let c = minC; c <= maxC; c++) {
+              const v = this.getCell(numToCol(c) + r);
+              row.push(v);
+              flat.push(v);
+            }
+            cells.push(row);
+          }
+          return { type: "range", cells, flat };
+        }
+        applyComparison(op, l, r) {
+          if (typeof l === "number" && typeof r === "string") {
+            const n = Number(r);
+            if (!isNaN(n)) r = n;
+          }
+          if (typeof r === "number" && typeof l === "string") {
+            const n = Number(l);
+            if (!isNaN(n)) l = n;
+          }
+          switch (op) {
+            case "=":
+              return l === r;
+            case "<>":
+              return l !== r;
+            case "<":
+              return l < r;
+            case ">":
+              return l > r;
+            case "<=":
+              return l <= r;
+            case ">=":
+              return l >= r;
+          }
+        }
+        callFunction(name, args) {
+          const flat = flattenArgs(args);
+          switch (name) {
+            case "SUMA":
+            case "SUM":
+              return flat.reduce((a, b) => a + toNum(b), 0);
+            case "PROMEDIO":
+            case "AVERAGE": {
+              const nums = flat.filter((x) => typeof x === "number");
+              return nums.length
+                ? nums.reduce((a, b) => a + b, 0) / nums.length
+                : 0;
+            }
+            case "CONTAR":
+            case "COUNT":
+              return flat.filter((x) => typeof x === "number").length;
+            case "CONTARA":
+            case "COUNTA":
+              return flat.filter(
+                (x) => x !== "" && x !== null && x !== undefined,
+              ).length;
+            case "MAX": {
+              const n = flat.filter((x) => typeof x === "number");
+              return n.length ? Math.max(...n) : 0;
+            }
+            case "MIN": {
+              const n = flat.filter((x) => typeof x === "number");
+              return n.length ? Math.min(...n) : 0;
+            }
+            case "SI":
+            case "IF": {
+              const cond = args[0];
+              if (cond) return args[1] !== undefined ? args[1] : true;
+              return args[2] !== undefined ? args[2] : false;
+            }
+            case "REDONDEAR":
+            case "ROUND": {
+              const n = toNum(args[0]);
+              const d = args[1] !== undefined ? toNum(args[1]) : 0;
+              const f = Math.pow(10, d);
+              return Math.round(n * f) / f;
+            }
+            case "ABS":
+              return Math.abs(toNum(args[0]));
+            case "RAIZ":
+            case "SQRT":
+              return Math.sqrt(toNum(args[0]));
+            case "POTENCIA":
+            case "POWER":
+              return Math.pow(toNum(args[0]), toNum(args[1]));
+            case "ENTERO":
+            case "INT":
+              return Math.floor(toNum(args[0]));
+            case "LARGO":
+            case "LEN":
+              return String(args[0] != null ? args[0] : "").length;
+            case "MAYUSC":
+            case "UPPER":
+              return String(args[0] != null ? args[0] : "").toUpperCase();
+            case "MINUSC":
+            case "LOWER":
+              return String(args[0] != null ? args[0] : "").toLowerCase();
+            case "CONCATENAR":
+            case "CONCAT":
+              return flat.map(String).join("");
+            case "SUMAR.SI":
+            case "SUMIF": {
+              const range = args[0];
+              const criteria = args[1];
+              const sumRange = args[2] !== undefined ? args[2] : range;
+              if (!range || range.type !== "range")
+                throw new Error("SUMAR.SI requiere un rango");
+              const rFlat = range.flat;
+              const sFlat =
+                sumRange && sumRange.type === "range" ? sumRange.flat : rFlat;
+              let total = 0;
+              for (let k = 0; k < rFlat.length; k++) {
+                if (matchExact(rFlat[k], criteria)) total += toNum(sFlat[k]);
+              }
+              return total;
+            }
+            case "CONTAR.SI":
+            case "COUNTIF": {
+              const range = args[0];
+              if (!range || range.type !== "range")
+                throw new Error("CONTAR.SI requiere un rango");
+              const criteria = args[1];
+              return range.flat.filter((x) => matchExact(x, criteria)).length;
+            }
+            case "BUSCARV":
+            case "VLOOKUP": {
+              const lookup = args[0];
+              const table = args[1];
+              if (!table || table.type !== "range")
+                throw new Error("BUSCARV requiere un rango como tabla");
+              const colIdx = toNum(args[2]) - 1;
+              const approximate = args[3] === undefined ? true : !!args[3];
+              const rows = table.cells;
+              if (!approximate) {
+                for (const row of rows) {
+                  if (matchExact(row[0], lookup))
+                    return row[colIdx] !== undefined ? row[colIdx] : "";
+                }
+                return "#N/A";
+              } else {
+                let best = null;
+                for (const row of rows) {
+                  if (toNum(row[0]) <= toNum(lookup)) best = row;
+                  else break;
+                }
+                return best
+                  ? best[colIdx] !== undefined
+                    ? best[colIdx]
+                    : ""
+                  : "#N/A";
+              }
+            }
+            default:
+              throw new Error("Función no reconocida: " + name);
+          }
+        }
+      }
+
+      function evaluateFormula(formula, data) {
+        if (typeof formula !== "string") throw new Error("Fórmula vacía");
+        let f = formula.trim();
+        if (f === "") throw new Error("Fórmula vacía");
+        if (!f.startsWith("=")) f = "=" + f;
+        const getCell = (ref) => (ref in data ? data[ref] : "");
+        const tokens = tokenize(f.substring(1));
+        const parser = new FormulaParser(tokens, getCell);
+        const result = parser.parseExpression();
+        if (parser.pos < tokens.length)
+          throw new Error("Símbolos sobrantes al final de la fórmula");
+        return result;
+      }
+
+      /* ============================================================
+   4. EJERCICIOS
+   ============================================================ */
+      const EXERCISES = [
+        {
+          title: "Suma de valores",
+          description:
+            "Tienes una lista de productos con sus precios. Necesitas calcular el total de las ventas.",
+          instruction:
+            "En la celda B7, escribe una fórmula que sume los precios de B2 a B5.",
+          answerCell: "B7",
+          solution: "=SUMA(B2:B5)",
+          testCases: [
+            {
+              name: "Datos originales",
+              data: {
+                A1: "Producto",
+                B1: "Precio",
+                A2: "Lápiz",
+                B2: 10,
+                A3: "Cuaderno",
+                B3: 25,
+                A4: "Regla",
+                B4: 5,
+                A5: "Borrador",
+                B5: 8,
+              },
+            },
+            {
+              name: "Precios más altos",
+              data: {
+                A1: "Producto",
+                B1: "Precio",
+                A2: "Lápiz",
+                B2: 100,
+                A3: "Cuaderno",
+                B3: 250,
+                A4: "Regla",
+                B4: 50,
+                A5: "Borrador",
+                B5: 80,
+              },
+            },
+            {
+              name: "Con precios en cero",
+              data: {
+                A1: "Producto",
+                B1: "Precio",
+                A2: "Lápiz",
+                B2: 0,
+                A3: "Cuaderno",
+                B3: 25,
+                A4: "Regla",
+                B4: 0,
+                A5: "Borrador",
+                B5: 8,
+              },
+            },
+          ],
+          hints: [
+            "Usa la función <code>SUMA</code>.",
+            "La sintaxis es <code>=SUMA(rango)</code>, por ejemplo <code>=SUMA(B2:B5)</code>.",
+            "El rango <code>B2:B5</code> incluye las celdas B2, B3, B4 y B5.",
+          ],
+        },
+        {
+          title: "Promedio de calificaciones",
+          description:
+            "Tienes las calificaciones de 5 estudiantes. Calcula el promedio del grupo.",
+          instruction:
+            "En la celda B8, escribe una fórmula que calcule el promedio de las calificaciones de B2 a B6.",
+          answerCell: "B8",
+          solution: "=PROMEDIO(B2:B6)",
+          testCases: [
+            {
+              name: "Calificaciones originales",
+              data: {
+                A1: "Estudiante",
+                B1: "Calificación",
+                A2: "Ana",
+                B2: 85,
+                A3: "Luis",
+                B3: 92,
+                A4: "María",
+                B4: 78,
+                A5: "Pedro",
+                B5: 88,
+                A6: "Sofía",
+                B6: 95,
+              },
+            },
+            {
+              name: "Calificaciones bajas",
+              data: {
+                A1: "Estudiante",
+                B1: "Calificación",
+                A2: "Ana",
+                B2: 50,
+                A3: "Luis",
+                B3: 60,
+                A4: "María",
+                B4: 70,
+                A5: "Pedro",
+                B5: 55,
+                A6: "Sofía",
+                B6: 65,
+              },
+            },
+            {
+              name: "Todas iguales",
+              data: {
+                A1: "Estudiante",
+                B1: "Calificación",
+                A2: "Ana",
+                B2: 80,
+                A3: "Luis",
+                B3: 80,
+                A4: "María",
+                B4: 80,
+                A5: "Pedro",
+                B5: 80,
+                A6: "Sofía",
+                B6: 80,
+              },
+            },
+          ],
+          hints: [
+            "Usa la función <code>PROMEDIO</code>.",
+            "La sintaxis es <code>=PROMEDIO(rango)</code>, por ejemplo <code>=PROMEDIO(B2:B6)</code>.",
+            "PROMEDIO suma todos los valores y los divide entre la cantidad de valores.",
+          ],
+        },
+        {
+          title: "Evaluación con SI",
+          description:
+            "Necesitas determinar si un estudiante aprobó. Un estudiante aprueba si su calificación es mayor o igual a 60.",
+          instruction:
+            'En la celda C2, escribe una fórmula que muestre "Aprobado" si B2 es mayor o igual a 60, y "Reprobado" en caso contrario.',
+          answerCell: "C2",
+          solution: '=SI(B2>=60;"Aprobado";"Reprobado")',
+          testCases: [
+            {
+              name: "Estudiante aprobado",
+              data: {
+                A1: "Estudiante",
+                B1: "Calificación",
+                C1: "Resultado",
+                A2: "Ana",
+                B2: 85,
+              },
+            },
+            {
+              name: "Estudiante reprobado",
+              data: {
+                A1: "Estudiante",
+                B1: "Calificación",
+                C1: "Resultado",
+                A2: "Ana",
+                B2: 45,
+              },
+            },
+            {
+              name: "Calificación exacta de 60",
+              data: {
+                A1: "Estudiante",
+                B1: "Calificación",
+                C1: "Resultado",
+                A2: "Ana",
+                B2: 60,
+              },
+            },
+          ],
+          hints: [
+            "Usa la función <code>SI</code>.",
+            "La sintaxis es <code>=SI(condición; valor_si_verdadero; valor_si_falso)</code>.",
+            'La condición es <code>B2&gt;=60</code>, el valor verdadero es <code>"Aprobado"</code> y el falso <code>"Reprobado"</code>. No olvides las comillas para el texto.',
+          ],
+        },
+        {
+          title: "Suma condicional",
+          description:
+            'Tienes ventas por región. Necesitas sumar solo las ventas de la región "Norte".',
+          instruction:
+            'En la celda B8, escribe una fórmula que sume únicamente las ventas donde la región sea "Norte".',
+          answerCell: "B8",
+          solution: '=SUMAR.SI(A2:A6;"Norte";B2:B6)',
+          testCases: [
+            {
+              name: "Datos originales",
+              data: {
+                A1: "Región",
+                B1: "Ventas",
+                A2: "Norte",
+                B2: 100,
+                A3: "Sur",
+                B3: 200,
+                A4: "Norte",
+                B4: 150,
+                A5: "Este",
+                B5: 80,
+                A6: "Norte",
+                B6: 120,
+              },
+            },
+            {
+              name: "Menos registros Norte",
+              data: {
+                A1: "Región",
+                B1: "Ventas",
+                A2: "Sur",
+                B2: 300,
+                A3: "Norte",
+                B3: 50,
+                A4: "Este",
+                B4: 400,
+                A5: "Sur",
+                B5: 100,
+                A6: "Norte",
+                B6: 250,
+              },
+            },
+            {
+              name: "Ningún registro Norte",
+              data: {
+                A1: "Región",
+                B1: "Ventas",
+                A2: "Sur",
+                B2: 200,
+                A3: "Este",
+                B3: 150,
+                A4: "Sur",
+                B4: 300,
+                A5: "Este",
+                B5: 250,
+                A6: "Sur",
+                B6: 100,
+              },
+            },
+          ],
+          hints: [
+            "Usa la función <code>SUMAR.SI</code>.",
+            "La sintaxis es <code>=SUMAR.SI(rango_criterio; criterio; rango_suma)</code>.",
+            'El rango_criterio es <code>A2:A6</code>, el criterio es <code>"Norte"</code> y el rango_suma es <code>B2:B6</code>.',
+          ],
+        },
+        {
+          title: "Calificación con letras (SI anidado)",
+          description:
+            "Convierte una calificación numérica a una letra según la escala: A (≥90), B (≥80), C (≥70), D (<70).",
+          instruction:
+            "En la celda C2, escribe una fórmula que convierta la calificación de B2 en una letra según la escala.",
+          answerCell: "C2",
+          solution: '=SI(B2>=90;"A";SI(B2>=80;"B";SI(B2>=70;"C";"D")))',
+          testCases: [
+            {
+              name: "Calificación 92 (A)",
+              data: {
+                A1: "Estudiante",
+                B1: "Calificación",
+                C1: "Letra",
+                A2: "Ana",
+                B2: 92,
+              },
+            },
+            {
+              name: "Calificación 85 (B)",
+              data: {
+                A1: "Estudiante",
+                B1: "Calificación",
+                C1: "Letra",
+                A2: "Ana",
+                B2: 85,
+              },
+            },
+            {
+              name: "Calificación 75 (C)",
+              data: {
+                A1: "Estudiante",
+                B1: "Calificación",
+                C1: "Letra",
+                A2: "Ana",
+                B2: 75,
+              },
+            },
+            {
+              name: "Calificación 60 (D)",
+              data: {
+                A1: "Estudiante",
+                B1: "Calificación",
+                C1: "Letra",
+                A2: "Ana",
+                B2: 60,
+              },
+            },
+          ],
+          hints: [
+            "Usa la función <code>SI</code> varias veces, una dentro de otra (anidada).",
+            'Empieza por la condición más alta: <code>SI(B2&gt;=90;"A";...)</code>. Luego anida otro SI en el tercer argumento.',
+            'Estructura: <code>=SI(B2&gt;=90;"A";SI(B2&gt;=80;"B";SI(B2&gt;=70;"C";"D")))</code>',
+          ],
+        },
+        {
+          title: "Búsqueda con BUSCARV",
+          description:
+            "Tienes una tabla de precios por código de producto. Necesitas buscar el precio del producto cuyo código está en A6.",
+          instruction:
+            "En la celda B6, escribe una fórmula que busque el precio del producto con código en A6, usando la tabla A2:C4.",
+          answerCell: "B6",
+          solution: "=BUSCARV(A6;A2:C4;3;FALSO)",
+          testCases: [
+            {
+              name: "Código P2 (Mouse)",
+              data: {
+                A1: "Código",
+                B1: "Producto",
+                C1: "Precio",
+                A2: "P1",
+                B2: "Teclado",
+                C2: 150,
+                A3: "P2",
+                B3: "Mouse",
+                C3: 80,
+                A4: "P3",
+                B4: "Monitor",
+                C4: 500,
+                A6: "P2",
+              },
+            },
+            {
+              name: "Código P1 (Teclado)",
+              data: {
+                A1: "Código",
+                B1: "Producto",
+                C1: "Precio",
+                A2: "P1",
+                B2: "Teclado",
+                C2: 150,
+                A3: "P2",
+                B3: "Mouse",
+                C3: 80,
+                A4: "P3",
+                B4: "Monitor",
+                C4: 500,
+                A6: "P1",
+              },
+            },
+            {
+              name: "Código P3 (Monitor)",
+              data: {
+                A1: "Código",
+                B1: "Producto",
+                C1: "Precio",
+                A2: "P1",
+                B2: "Teclado",
+                C2: 150,
+                A3: "P2",
+                B3: "Mouse",
+                C3: 80,
+                A4: "P3",
+                B4: "Monitor",
+                C4: 500,
+                A6: "P3",
+              },
+            },
+          ],
+          hints: [
+            "Usa la función <code>BUSCARV</code> (o VLOOKUP).",
+            "La sintaxis es <code>=BUSCARV(valor_buscado; tabla; número_de_columna; [coincidencia_exacta])</code>.",
+            "El valor buscado es <code>A6</code>, la tabla es <code>A2:C4</code>, la columna del precio es la <code>3</code>, y usa <code>FALSO</code> para coincidencia exacta.",
+          ],
+        },
+      ];
+
+      /* ============================================================
+   5. ESTADO Y PERSISTENCIA
+   ============================================================ */
+      const STORAGE_KEY = "excel_formula_lab_progress_v1";
+      let state = {
+        current: 0,
+        answers: {}, // { [exIdx]: formulaString }
+        completed: {}, // { [exIdx]: true }
+      };
+
+      function loadState() {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            state.answers = parsed.answers || {};
+            state.completed = parsed.completed || {};
+          }
+        } catch (e) {
+          /* ignore */
+        }
+      }
+      function saveState() {
+        try {
+          localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify({
+              answers: state.answers,
+              completed: state.completed,
+            }),
+          );
+        } catch (e) {
+          /* ignore */
+        }
+      }
+
+      /* ============================================================
+   6. RENDERIZADO
+   ============================================================ */
+      const el = {
+        tabs: document.getElementById("exTabs"),
+        title: document.getElementById("exTitle"),
+        desc: document.getElementById("exDesc"),
+        instruction: document.getElementById("exInstruction"),
+        cellRef: document.getElementById("cellRef"),
+        formulaInput: document.getElementById("formulaInput"),
+        sheet: document.getElementById("sheet"),
+        btnCheck: document.getElementById("btnCheck"),
+        btnHint: document.getElementById("btnHint"),
+        btnReset: document.getElementById("btnReset"),
+        btnPrev: document.getElementById("btnPrev"),
+        btnNext: document.getElementById("btnNext"),
+        feedback: document.getElementById("feedback"),
+        progressInfo: document.getElementById("progressInfo"),
+      };
+
+      function renderTabs() {
+        el.tabs.innerHTML = "";
+        EXERCISES.forEach((ex, idx) => {
+          const t = document.createElement("div");
+          t.className = "ex-tab";
+          if (idx === state.current) t.classList.add("active");
+          if (state.completed[idx]) t.classList.add("done");
+          t.innerHTML =
+            '<span class="num">' + (idx + 1) + ".</span> " + ex.title;
+          t.addEventListener("click", () => goTo(idx));
+          el.tabs.appendChild(t);
+        });
+        const total = Object.keys(state.completed).filter(
+          (k) => state.completed[k],
+        ).length;
+        el.progressInfo.textContent =
+          total + " de " + EXERCISES.length + " ejercicios completados";
+      }
+
+      function getBounds(data, answerCell) {
+        let maxRow = 1,
+          maxCol = 1;
+        const consider = (ref) => {
+          const m = String(ref).match(/^([A-Z]+)(\d+)$/);
+          if (m) {
+            maxCol = Math.max(maxCol, colToNum(m[1]));
+            maxRow = Math.max(maxRow, parseInt(m[2]));
+          }
+        };
+        Object.keys(data).forEach(consider);
+        if (answerCell) consider(answerCell);
+        return { maxRow: maxRow + 2, maxCol: Math.max(maxCol, 4) + 1 };
+      }
+
+      function renderSheet() {
+        const ex = EXERCISES[state.current];
+        const data = ex.testCases[0].data;
+        const { maxRow, maxCol } = getBounds(data, ex.answerCell);
+
+        el.sheet.innerHTML = "";
+
+        // thead
+        const thead = document.createElement("thead");
+        const trH = document.createElement("tr");
+        const corner = document.createElement("th");
+        corner.className = "corner";
+        trH.appendChild(corner);
+        for (let c = 1; c <= maxCol; c++) {
+          const th = document.createElement("th");
+          th.textContent = numToCol(c);
+          trH.appendChild(th);
+        }
+        thead.appendChild(trH);
+        el.sheet.appendChild(thead);
+
+        // tbody
+        const tbody = document.createElement("tbody");
+        for (let r = 1; r <= maxRow; r++) {
+          const tr = document.createElement("tr");
+          const rowHeader = document.createElement("th");
+          rowHeader.textContent = r;
+          tr.appendChild(rowHeader);
+
+          for (let c = 1; c <= maxCol; c++) {
+            const ref = numToCol(c) + r;
+            const td = document.createElement("td");
+
+            if (ref === ex.answerCell) {
+              td.className = "answer-cell";
+              const input = document.createElement("input");
+              input.type = "text";
+              input.className = "answer-input";
+              input.id = "answerCellInput";
+              input.placeholder = "=...";
+              input.value = state.answers[state.current] || "";
+              input.spellcheck = false;
+              input.addEventListener("input", onAnswerInput);
+              input.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  checkAnswer();
+                }
+              });
+              input.addEventListener("focus", () => {
+                el.formulaInput.value = input.value;
+              });
+              td.appendChild(input);
+            } else if (ref in data) {
+              const v = data[ref];
+              td.textContent = String(v);
+              if (typeof v === "number") td.classList.add("num");
+              if (ref.endsWith("1")) td.classList.add("bold");
+            }
+
+            tr.appendChild(td);
+          }
+          tbody.appendChild(tr);
+        }
+        el.sheet.appendChild(tbody);
+      }
+
+      function renderExercise() {
+        const ex = EXERCISES[state.current];
+        el.title.textContent = ex.title;
+        el.desc.textContent = ex.description;
+        el.instruction.textContent = ex.instruction;
+        el.cellRef.textContent = ex.answerCell;
+        el.formulaInput.value = state.answers[state.current] || "";
+
+        renderTabs();
+        renderSheet();
+
+        el.feedback.innerHTML = "";
+        el.feedback.classList.remove("show");
+
+        el.btnPrev.disabled = state.current === 0;
+        el.btnNext.disabled = state.current === EXERCISES.length - 1;
+      }
+
+      /* ============================================================
+   7. INTERACCIÓN
+   ============================================================ */
+      function onAnswerInput(e) {
+        const v = e.target.value;
+        state.answers[state.current] = v;
+        el.formulaInput.value = v;
+        saveState();
+      }
+
+      el.formulaInput.addEventListener("input", (e) => {
+        const v = e.target.value;
+        state.answers[state.current] = v;
+        const input = document.getElementById("answerCellInput");
+        if (input) input.value = v;
+        saveState();
+      });
+      el.formulaInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          checkAnswer();
+        }
+      });
+
+      el.btnCheck.addEventListener("click", checkAnswer);
+      el.btnReset.addEventListener("click", resetExercise);
+      el.btnHint.addEventListener("click", showHint);
+
+      el.btnPrev.addEventListener("click", () => {
+        if (state.current > 0) goTo(state.current - 1);
+      });
+      el.btnNext.addEventListener("click", () => {
+        if (state.current < EXERCISES.length - 1) goTo(state.current + 1);
+      });
+
+      function goTo(idx) {
+        state.current = idx;
+        renderExercise();
+      }
+
+      function resetExercise() {
+        state.answers[state.current] = "";
+        delete state.completed[state.current];
+        saveState();
+        renderExercise();
+      }
+
+      let hintIndex = {};
+      function showHint() {
+        const ex = EXERCISES[state.current];
+        const current = hintIndex[state.current] || 0;
+        const idx = Math.min(current, ex.hints.length - 1);
+        hintIndex[state.current] = current + 1;
+
+        el.feedback.innerHTML =
+          '<div class="hint-box"><strong>💡 Pista ' +
+          (idx + 1) +
+          " de " +
+          ex.hints.length +
+          ":</strong> " +
+          ex.hints[idx] +
+          (idx < ex.hints.length - 1
+            ? '<span class="hint-step">Vuelve a pulsar "Ver pista" para la siguiente.</span>'
+            : "") +
+          "</div>";
+        el.feedback.classList.add("show");
+      }
+
+      /* ============================================================
+   8. CALIFICACIÓN
+   ============================================================ */
+      function checkAnswer() {
+        const ex = EXERCISES[state.current];
+        const userFormula = state.answers[state.current] || "";
+
+        if (!userFormula.trim()) {
+          showFeedback(
+            "error",
+            "Fórmula vacía",
+            "Escribe una fórmula antes de comprobar.",
+          );
+          return;
+        }
+
+        const results = [];
+        for (const tc of ex.testCases) {
+          try {
+            const got = evaluateFormula(userFormula, tc.data);
+            const expected = evaluateFormula(ex.solution, tc.data);
+            const pass = matchExact(got, expected);
+            results.push({ name: tc.name, pass, got, expected, error: null });
+          } catch (err) {
+            results.push({
+              name: tc.name,
+              pass: false,
+              got: "—",
+              expected: "—",
+              error: err.message,
+            });
+          }
+        }
+
+        const passed = results.filter((r) => r.pass).length;
+        const total = results.length;
+        const allPass = passed === total;
+
+        if (allPass) {
+          state.completed[state.current] = true;
+          saveState();
+          renderTabs();
+        }
+
+        renderFeedback(results, passed, total, allPass);
+      }
+
+      function renderFeedback(results, passed, total, allPass) {
+        let type, title, subtitle;
+        if (allPass) {
+          type = "success";
+          title = "✅ ¡Excelente! Fórmula correcta";
+          subtitle =
+            "Pasaste las " +
+            total +
+            " pruebas. ¡Sigue con el siguiente ejercicio!";
+        } else if (passed > 0) {
+          type = "partial";
+          title = "⚠️ Casi lo tienes";
+          subtitle =
+            "Pasaste " +
+            passed +
+            " de " +
+            total +
+            " pruebas. Revisa los casos que fallan.";
+        } else {
+          type = "error";
+          title = "❌ La fórmula no es correcta";
+          subtitle =
+            "No pasaste ninguna prueba. Revisa tu fórmula e inténtalo de nuevo.";
+        }
+
+        let html =
+          '<div class="fb-box ' +
+          type +
+          '"><h4>' +
+          title +
+          "</h4><div>" +
+          subtitle +
+          "</div>";
+
+        html +=
+          '<table class="test-results"><thead><tr>' +
+          "<th>Prueba</th><th>Esperado</th><th>Obtenido</th><th>Resultado</th>" +
+          "</tr></thead><tbody>";
+
+        results.forEach((r) => {
+          let gotDisplay = r.error
+            ? "Error: " + escapeHtml(r.error)
+            : String(r.got);
+          let expDisplay = r.error ? "—" : String(r.expected);
+          html +=
+            "<tr>" +
+            "<td>" +
+            escapeHtml(r.name) +
+            "</td>" +
+            '<td class="expected">' +
+            escapeHtml(expDisplay) +
+            "</td>" +
+            '<td class="got ' +
+            (r.pass ? "pass" : "fail") +
+            '">' +
+            escapeHtml(gotDisplay) +
+            "</td>" +
+            '<td class="' +
+            (r.pass ? "pass" : "fail") +
+            '">' +
+            (r.pass ? "✓ Correcto" : "✗ Incorrecto") +
+            "</td>" +
+            "</tr>";
+        });
+        html += "</tbody></table>";
+
+        if (!allPass) {
+          html +=
+            '<div style="margin-top:10px;font-size:12px;color:#605E5C;">' +
+            "Recuerda: una fórmula no debe contener valores fijos (como <code>=370</code>), " +
+            "sino referencias a celdas. Así funciona con cualquier conjunto de datos." +
+            "</div>";
+        }
+
+        html += "</div>";
+        el.feedback.innerHTML = html;
+        el.feedback.classList.add("show");
+      }
+
+      function showFeedback(type, title, subtitle) {
+        el.feedback.innerHTML =
+          '<div class="fb-box ' +
+          type +
+          '"><h4>' +
+          title +
+          "</h4><div>" +
+          subtitle +
+          "</div></div>";
+        el.feedback.classList.add("show");
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      }
+
+      /* ============================================================
+   9. INIT
+   ============================================================ */
+      loadState();
+      renderExercise();
+    </script>
+  </body>
+</html>
