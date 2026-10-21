@@ -1,0 +1,1190 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Partes de Excel - Simulador</title>
+    <style>
+      :root {
+        --green: #107c41;
+        --green-dark: #0e6b39;
+        --ribbon-bg: #f3f2f1;
+        --border: #d4d4d4;
+        --cell-line: #d4d4d4;
+        --header-bg: #f5f5f5;
+        --header-hover: #e6e6e6;
+        --text: #323130;
+        --text-muted: #605e5c;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+        background: #ededed;
+        padding: 16px;
+        color: var(--text);
+        font-size: 13px;
+      }
+      .app {
+        max-width: 1120px;
+        margin: 0 auto;
+        background: #fff;
+        border: 1px solid #999;
+        border-radius: 4px;
+        overflow: hidden;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+        user-select: none;
+      }
+
+      /* ---- Title bar ---- */
+      .titlebar {
+        background: var(--green);
+        color: #fff;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 8px;
+        height: 32px;
+        font-size: 12px;
+      }
+      .tb-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .qa-icons {
+        display: flex;
+        gap: 2px;
+      }
+      .qa {
+        background: transparent;
+        border: none;
+        color: #fff;
+        font-size: 13px;
+        cursor: pointer;
+        padding: 3px 6px;
+        border-radius: 3px;
+      }
+      .qa:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
+      .tb-title {
+        font-weight: 600;
+        font-size: 12px;
+      }
+      .tb-right {
+        display: flex;
+      }
+      .tb-right span {
+        padding: 4px 12px;
+        font-size: 13px;
+        cursor: pointer;
+        line-height: 1;
+      }
+      .tb-right span:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
+      .tb-right span:last-child:hover {
+        background: #e81123;
+      }
+
+      /* ---- Ribbon tabs ---- */
+      .ribbon-tabs {
+        display: flex;
+        background: var(--green);
+        padding: 0 8px;
+        overflow-x: auto;
+        height: 28px;
+        align-items: flex-end;
+      }
+      .ribbon-tabs span {
+        padding: 5px 12px 4px;
+        color: #fff;
+        font-size: 12px;
+        cursor: pointer;
+        border-radius: 4px 4px 0 0;
+        white-space: nowrap;
+      }
+      .ribbon-tabs span:hover {
+        background: rgba(255, 255, 255, 0.12);
+      }
+      .ribbon-tabs span.active {
+        background: var(--ribbon-bg);
+        color: var(--text);
+        font-weight: 600;
+      }
+
+      /* ---- Ribbon ---- */
+      .ribbon {
+        display: flex;
+        background: var(--ribbon-bg);
+        border-bottom: 1px solid var(--border);
+        padding: 2px 4px;
+        min-height: 88px;
+        overflow-x: auto;
+        font-size: 11px;
+      }
+      .rgroup {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        border-right: 1px solid #d9d9d9;
+        padding: 0 6px;
+        gap: 2px;
+        flex-shrink: 0;
+      }
+      .rgroup:last-child {
+        border-right: none;
+      }
+      .ritems {
+        display: flex;
+        gap: 2px;
+        align-items: stretch;
+        flex: 1;
+        padding-top: 2px;
+      }
+      .rlabel {
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 10px;
+        padding-top: 2px;
+      }
+
+      .rbtn {
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 2px;
+        padding: 3px 5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        cursor: pointer;
+        color: var(--text);
+        font-size: 11px;
+        font-family: inherit;
+        white-space: nowrap;
+        min-height: 22px;
+      }
+      .rbtn:hover {
+        background: #e6e6e6;
+        border-color: #c8c8c8;
+      }
+      .rbtn:active {
+        background: #c8c8c8;
+        border-color: #a6a6a6;
+      }
+
+      .rbtn.large {
+        flex-direction: column;
+        padding: 4px 8px;
+        gap: 2px;
+        min-width: 48px;
+        justify-content: center;
+      }
+      .rbtn.icon-only {
+        padding: 3px 4px;
+        min-width: 24px;
+        justify-content: center;
+      }
+
+      .rstack {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
+
+      .rfield {
+        border: 1px solid #b4b4b4;
+        background: #fff;
+        padding: 1px 4px;
+        font-size: 11px;
+        height: 22px;
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        border-radius: 2px;
+        min-width: 48px;
+      }
+      .rfield .arrow {
+        font-size: 8px;
+        color: var(--text-muted);
+      }
+
+      .icon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+      }
+      .icon-lg {
+        width: 22px;
+        height: 22px;
+      }
+
+      .b,
+      .i,
+      .u {
+        font-size: 14px;
+        width: 14px;
+        text-align: center;
+      }
+      .b {
+        font-weight: 700;
+        font-family: Georgia, serif;
+      }
+      .i {
+        font-style: italic;
+        font-family: Georgia, serif;
+      }
+      .u {
+        text-decoration: underline;
+      }
+      .a-color {
+        position: relative;
+        font-size: 13px;
+      }
+      .a-color::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -1px;
+        height: 2.5px;
+        background: #c00000;
+      }
+
+      /* ---- Formula bar ---- */
+      .formulabar {
+        display: flex;
+        border-bottom: 1px solid var(--border);
+        background: #fff;
+        height: 26px;
+      }
+      .namebox {
+        width: 92px;
+        border-right: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        cursor: pointer;
+        gap: 4px;
+      }
+      .namebox:hover {
+        background: #f5f5f5;
+      }
+      .namebox .arrow {
+        font-size: 8px;
+        color: var(--text-muted);
+      }
+
+      .fx-btn {
+        width: 32px;
+        border-right: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-muted);
+        cursor: pointer;
+        gap: 1px;
+      }
+      .fx-btn:hover {
+        background: #f5f5f5;
+      }
+      .fx-btn em {
+        font-family: Georgia, serif;
+        font-size: 13px;
+      }
+      .fx-btn .expand {
+        font-size: 8px;
+      }
+
+      .formula-input {
+        flex: 1;
+        padding: 0 8px;
+        display: flex;
+        align-items: center;
+        font-family: Calibri, "Segoe UI", sans-serif;
+        font-size: 13px;
+        color: var(--text);
+        overflow: hidden;
+        white-space: nowrap;
+      }
+
+      /* ---- Sheet ---- */
+      .sheet-wrap {
+        position: relative;
+        background: #fff;
+        overflow: auto;
+        max-height: 360px;
+      }
+      .sheet {
+        border-collapse: collapse;
+        table-layout: fixed;
+        font-family: Calibri, "Segoe UI", sans-serif;
+        font-size: 13px;
+        background: #fff;
+        min-width: 100%;
+      }
+      .sheet th,
+      .sheet td {
+        border: 1px solid var(--cell-line);
+        height: 22px;
+        padding: 0 4px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        font-weight: normal;
+      }
+      .sheet thead th {
+        background: var(--header-bg);
+        color: var(--text-muted);
+        text-align: center;
+        font-size: 11px;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        height: 20px;
+        width: 90px;
+        cursor: pointer;
+      }
+      .sheet thead th:hover {
+        background: var(--header-hover);
+      }
+      .sheet thead th.corner {
+        width: 32px;
+        position: sticky;
+        left: 0;
+        top: 0;
+        z-index: 6;
+      }
+      .sheet thead th.corner:hover {
+        background: var(--header-hover);
+      }
+
+      .sheet tbody th {
+        background: var(--header-bg);
+        color: var(--text-muted);
+        text-align: center;
+        font-size: 11px;
+        font-weight: 600;
+        position: sticky;
+        left: 0;
+        z-index: 4;
+        width: 32px;
+        cursor: pointer;
+      }
+      .sheet tbody th:hover {
+        background: var(--header-hover);
+      }
+
+      .sheet td {
+        min-width: 90px;
+        cursor: cell;
+      }
+      .sheet td:hover {
+        background: #fffdf0;
+      }
+      .sheet td.num {
+        text-align: right;
+        padding-right: 6px;
+      }
+      .sheet td.bold {
+        font-weight: 600;
+      }
+      .sheet td.currency {
+        text-align: right;
+        padding-right: 6px;
+      }
+
+      .sheet td.active {
+        outline: 2px solid var(--green);
+        outline-offset: -1px;
+        background: #fff;
+        position: relative;
+        z-index: 2;
+      }
+      .sheet td.active::after {
+        content: "";
+        position: absolute;
+        bottom: -1px;
+        right: -1px;
+        width: 6px;
+        height: 6px;
+        background: var(--green);
+        border: 1px solid #fff;
+      }
+
+      /* ---- Sheet bar ---- */
+      .sheetbar {
+        display: flex;
+        align-items: center;
+        background: #f5f5f5;
+        border-top: 1px solid var(--border);
+        height: 28px;
+        padding: 0 4px;
+        gap: 2px;
+        font-size: 12px;
+      }
+      .nav-arrows {
+        display: flex;
+      }
+      .nav-arrows button {
+        background: transparent;
+        border: none;
+        padding: 3px 6px;
+        cursor: pointer;
+        color: var(--text-muted);
+        font-size: 10px;
+      }
+      .nav-arrows button:hover {
+        background: #e6e6e6;
+      }
+      .sheet-tabs {
+        display: flex;
+        overflow-x: auto;
+        align-items: stretch;
+        height: 100%;
+      }
+      .sheet-tab {
+        padding: 0 12px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        border-right: 1px solid var(--border);
+        background: #f5f5f5;
+        font-size: 12px;
+        position: relative;
+      }
+      .sheet-tab:hover {
+        background: #ebebeb;
+      }
+      .sheet-tab.active {
+        background: #fff;
+        font-weight: 600;
+        color: var(--green);
+        border-bottom: 2px solid var(--green);
+        margin-bottom: -1px;
+      }
+      .sheet-tab-add {
+        padding: 0 10px;
+        cursor: pointer;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+      }
+      .sheet-tab-add:hover {
+        background: #ebebeb;
+      }
+
+      /* ---- Status bar ---- */
+      .statusbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--green);
+        color: #fff;
+        font-size: 11px;
+        padding: 0 10px;
+        height: 22px;
+      }
+      .sb-left,
+      .sb-right {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+      }
+      .sb-right .view-btn {
+        opacity: 0.7;
+        cursor: pointer;
+        font-size: 10px;
+        padding: 0 3px;
+      }
+      .sb-right .view-btn.active {
+        opacity: 1;
+      }
+      .zoom-slider {
+        width: 80px;
+        height: 3px;
+        background: rgba(255, 255, 255, 0.35);
+        border-radius: 2px;
+        position: relative;
+        margin: 0 6px;
+      }
+      .zoom-slider::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: -4px;
+        width: 9px;
+        height: 11px;
+        background: #fff;
+        border-radius: 2px;
+      }
+
+      /* ---- Info panel ---- */
+      .info-panel {
+        max-width: 1120px;
+        margin: 14px auto 0;
+        background: #fff;
+        border-radius: 6px;
+        overflow: hidden;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+        display: flex;
+      }
+      .info-icon-wrap {
+        background: var(--green);
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .info-icon-wrap .icon {
+        width: 28px;
+        height: 28px;
+        color: #fff;
+      }
+      .info-content {
+        padding: 12px 18px;
+        flex: 1;
+      }
+      .info-content h3 {
+        font-size: 15px;
+        color: var(--green);
+        margin-bottom: 3px;
+      }
+      .info-content p {
+        font-size: 13px;
+        color: var(--text);
+        line-height: 1.45;
+      }
+
+      .part {
+        cursor: pointer;
+      }
+      .part.highlight {
+        outline: 2px solid #f2a900 !important;
+        outline-offset: -2px;
+        background: #fff4ce !important;
+        z-index: 3;
+        position: relative;
+      }
+
+      .sheet-wrap::-webkit-scrollbar {
+        width: 14px;
+        height: 14px;
+      }
+      .sheet-wrap::-webkit-scrollbar-track {
+        background: #f5f5f5;
+      }
+      .sheet-wrap::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border: 3px solid #f5f5f5;
+        border-radius: 7px;
+      }
+      .sheet-wrap::-webkit-scrollbar-thumb:hover {
+        background: #a6a6a6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <!-- Barra de título -->
+      <div class="titlebar part" data-parte="barra-titulo">
+        <div class="tb-left">
+          <div class="qa-icons">
+            <button class="qa" title="Guardar">💾</button>
+            <button class="qa" title="Deshacer">↶</button>
+            <button class="qa" title="Rehacer">↷</button>
+          </div>
+          <div class="tb-title">Libro1 - Excel</div>
+        </div>
+        <div class="tb-right"><span>—</span><span>□</span><span>×</span></div>
+      </div>
+
+      <!-- Pestañas de la cinta -->
+      <div class="ribbon-tabs part" data-parte="cinta">
+        <span class="active">Inicio</span>
+        <span>Insertar</span>
+        <span>Disposición</span>
+        <span>Fórmulas</span>
+        <span>Datos</span>
+        <span>Revisar</span>
+        <span>Vista</span>
+        <span>Ayuda</span>
+      </div>
+
+      <!-- Cinta de opciones -->
+      <div class="ribbon part" data-parte="cinta">
+        <!-- Portapapeles -->
+        <div class="rgroup">
+          <div class="ritems">
+            <button class="rbtn large">
+              <svg
+                class="icon icon-lg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+              >
+                <rect x="8" y="4" width="10" height="14" rx="1" />
+                <rect x="6" y="2" width="14" height="18" rx="1.5" />
+                <rect
+                  x="4"
+                  y="6"
+                  width="12"
+                  height="14"
+                  rx="0.5"
+                  fill="#F3F2F1"
+                />
+              </svg>
+              <span>Pegar</span>
+            </button>
+            <div class="rstack">
+              <button class="rbtn">
+                <svg
+                  class="icon"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.2"
+                >
+                  <circle cx="4" cy="4" r="1.5" />
+                  <circle cx="4" cy="12" r="1.5" />
+                  <line x1="4" y1="5.5" x2="12" y2="12" />
+                  <line x1="4" y1="10.5" x2="12" y2="4" />
+                </svg>
+                Cortar
+              </button>
+              <button class="rbtn">
+                <svg
+                  class="icon"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.2"
+                >
+                  <rect x="2" y="2" width="9" height="12" rx="0.5" />
+                  <rect
+                    x="5"
+                    y="4"
+                    width="9"
+                    height="12"
+                    rx="0.5"
+                    fill="#F3F2F1"
+                  />
+                </svg>
+                Copiar
+              </button>
+            </div>
+          </div>
+          <div class="rlabel">Portapapeles</div>
+        </div>
+
+        <!-- Fuente -->
+        <div class="rgroup">
+          <div class="ritems" style="flex-direction: column; gap: 2px">
+            <div style="display: flex; gap: 2px">
+              <div class="rfield" style="width: 100px">
+                Calibri <span class="arrow">▾</span>
+              </div>
+              <div class="rfield" style="width: 42px">
+                11 <span class="arrow">▾</span>
+              </div>
+            </div>
+            <div style="display: flex; gap: 1px">
+              <button class="rbtn icon-only"><span class="b">B</span></button>
+              <button class="rbtn icon-only"><span class="i">I</span></button>
+              <button class="rbtn icon-only"><span class="u">U</span></button>
+              <button class="rbtn icon-only" title="Bordes">
+                <svg
+                  class="icon"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.2"
+                >
+                  <rect
+                    x="2"
+                    y="2"
+                    width="12"
+                    height="12"
+                    stroke-dasharray="2 1.5"
+                  />
+                  <line x1="8" y1="2" x2="8" y2="14" />
+                  <line x1="2" y1="8" x2="14" y2="8" />
+                </svg>
+              </button>
+              <button class="rbtn icon-only" title="Relleno">
+                <svg
+                  class="icon"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.2"
+                >
+                  <path d="M4 8l5-5 4 4-5 5z" />
+                  <path
+                    d="M2 12c0 1 1 2 2 2s2-1 2-2-1-1-2-3c-1 2-2 2-2 3z"
+                    fill="#FFC000"
+                    stroke="none"
+                  />
+                </svg>
+              </button>
+              <button class="rbtn icon-only">
+                <span class="a-color">A</span>
+              </button>
+            </div>
+          </div>
+          <div class="rlabel">Fuente</div>
+        </div>
+
+        <!-- Alineación -->
+        <div class="rgroup">
+          <div class="ritems" style="flex-direction: column; gap: 2px">
+            <div style="display: flex; gap: 1px">
+              <button class="rbtn icon-only">
+                <svg
+                  class="icon"
+                  viewBox="0 0 16 16"
+                  stroke="currentColor"
+                  stroke-width="1.4"
+                  stroke-linecap="round"
+                >
+                  <line x1="2" y1="4" x2="14" y2="4" />
+                  <line x1="2" y1="8" x2="10" y2="8" />
+                  <line x1="2" y1="12" x2="14" y2="12" />
+                </svg>
+              </button>
+              <button class="rbtn icon-only">
+                <svg
+                  class="icon"
+                  viewBox="0 0 16 16"
+                  stroke="currentColor"
+                  stroke-width="1.4"
+                  stroke-linecap="round"
+                >
+                  <line x1="2" y1="4" x2="14" y2="4" />
+                  <line x1="4" y1="8" x2="12" y2="8" />
+                  <line x1="2" y1="12" x2="14" y2="12" />
+                </svg>
+              </button>
+              <button class="rbtn icon-only">
+                <svg
+                  class="icon"
+                  viewBox="0 0 16 16"
+                  stroke="currentColor"
+                  stroke-width="1.4"
+                  stroke-linecap="round"
+                >
+                  <line x1="2" y1="4" x2="14" y2="4" />
+                  <line x1="6" y1="8" x2="14" y2="8" />
+                  <line x1="2" y1="12" x2="14" y2="12" />
+                </svg>
+              </button>
+            </div>
+            <div style="display: flex; gap: 1px">
+              <button class="rbtn icon-only" title="Ajustar texto">
+                <svg
+                  class="icon"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.3"
+                >
+                  <path d="M3 4h10M3 7h10M3 10h6M3 13h6" />
+                  <path d="M11 10l2 2-2 2" fill="none" />
+                </svg>
+              </button>
+              <button class="rbtn icon-only" title="Combinar">
+                <svg
+                  class="icon"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.3"
+                >
+                  <rect x="2" y="4" width="12" height="8" />
+                  <path d="M6 8h4M8 6v4" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="rlabel">Alineación</div>
+        </div>
+
+        <!-- Número -->
+        <div class="rgroup">
+          <div class="ritems" style="flex-direction: column; gap: 2px">
+            <div class="rfield" style="width: 100px">
+              General <span class="arrow">▾</span>
+            </div>
+            <div style="display: flex; gap: 1px">
+              <button class="rbtn icon-only" title="Moneda">
+                <b style="font-size: 12px">$</b>
+              </button>
+              <button class="rbtn icon-only" title="Porcentaje">
+                <b style="font-size: 12px">%</b>
+              </button>
+              <button class="rbtn icon-only" title="Separador miles">
+                <b style="font-size: 12px">,</b>
+              </button>
+              <button class="rbtn icon-only" title="Aumentar decimales">
+                <b style="font-size: 11px">.00→</b>
+              </button>
+            </div>
+          </div>
+          <div class="rlabel">Número</div>
+        </div>
+
+        <!-- Estilos -->
+        <div class="rgroup">
+          <div class="ritems">
+            <button class="rbtn large">
+              <svg
+                class="icon icon-lg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.4"
+              >
+                <rect x="4" y="4" width="16" height="16" rx="1" />
+                <line x1="4" y1="10" x2="20" y2="10" />
+                <rect
+                  x="6"
+                  y="12"
+                  width="4"
+                  height="6"
+                  fill="#FFC000"
+                  stroke="none"
+                />
+              </svg>
+              <span>Formato condicional</span>
+            </button>
+            <button class="rbtn large">
+              <svg
+                class="icon icon-lg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.4"
+              >
+                <rect x="4" y="5" width="16" height="14" rx="1" />
+                <line x1="4" y1="10" x2="20" y2="10" />
+                <line x1="4" y1="15" x2="20" y2="15" />
+                <line x1="12" y1="5" x2="12" y2="19" />
+              </svg>
+              <span>Tabla</span>
+            </button>
+          </div>
+          <div class="rlabel">Estilos</div>
+        </div>
+
+        <!-- Edición -->
+        <div class="rgroup">
+          <div class="ritems">
+            <div class="rstack">
+              <button class="rbtn" title="Autosuma">
+                <b style="font-size: 14px; font-family: Georgia">Σ</b> Autosuma
+              </button>
+              <button class="rbtn" title="Buscar">🔍 Buscar</button>
+            </div>
+          </div>
+          <div class="rlabel">Edición</div>
+        </div>
+      </div>
+
+      <!-- Barra de fórmulas -->
+      <div class="formulabar">
+        <div class="namebox part" data-parte="cuadro-nombre" id="nameBox">
+          <span id="nameBoxText">A1</span><span class="arrow">▾</span>
+        </div>
+        <div class="fx-btn part" data-parte="barra-formulas">
+          <em>fx</em><span class="expand">▾</span>
+        </div>
+        <div
+          class="formula-input part"
+          data-parte="barra-formulas"
+          id="formulaInput"
+        >
+          Producto
+        </div>
+      </div>
+
+      <!-- Hoja de cálculo -->
+      <div class="sheet-wrap">
+        <table class="sheet">
+          <thead>
+            <tr>
+              <th class="corner part" data-parte="encabezados-columnas"></th>
+              <th
+                class="part"
+                data-parte="encabezados-columnas"
+                style="width: 150px"
+              >
+                A
+              </th>
+              <th class="part" data-parte="encabezados-columnas">B</th>
+              <th class="part" data-parte="encabezados-columnas">C</th>
+              <th class="part" data-parte="encabezados-columnas">D</th>
+              <th class="part" data-parte="encabezados-columnas">E</th>
+              <th class="part" data-parte="encabezados-columnas">F</th>
+              <th class="part" data-parte="encabezados-columnas">G</th>
+              <th class="part" data-parte="encabezados-columnas">H</th>
+            </tr>
+          </thead>
+          <tbody id="sheetBody">
+            <!-- generado por JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pestañas de hoja -->
+      <div class="sheetbar part" data-parte="pestanas-hoja">
+        <div class="nav-arrows"><button>◄</button><button>►</button></div>
+        <div class="sheet-tabs">
+          <div class="sheet-tab active">Hoja1</div>
+          <div class="sheet-tab">Hoja2</div>
+          <div class="sheet-tab-add">+</div>
+        </div>
+      </div>
+
+      <!-- Barra de estado -->
+      <div class="statusbar part" data-parte="barra-estado">
+        <div class="sb-left">
+          <span>Listo</span>
+          <span>Accesibilidad: buena</span>
+        </div>
+        <div class="sb-right">
+          <span class="view-btn active">▦</span>
+          <span class="view-btn">▤</span>
+          <span class="view-btn">▥</span>
+          <div class="zoom-slider"></div>
+          <span>100%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel de información -->
+    <div class="info-panel">
+      <div class="info-icon-wrap">
+        <svg
+          class="icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+        >
+          <circle cx="12" cy="12" r="9" />
+          <line x1="12" y1="11" x2="12" y2="17" />
+          <circle cx="12" cy="8" r="0.8" fill="currentColor" />
+        </svg>
+      </div>
+      <div class="info-content">
+        <h3 id="infoTitulo">Explora el simulador</h3>
+        <p id="infoTexto">
+          Haz clic en cualquier parte resaltada (barra de título, cinta, celdas,
+          pestañas…) para ver su nombre y función. También puedes hacer clic en
+          una celda para ver su referencia y fórmula.
+        </p>
+      </div>
+    </div>
+
+    <script>
+      /* ---------- Datos de ejemplo y fórmulas ---------- */
+      const celdas = {
+        A1: { valor: "Producto", formula: "Producto", clase: "bold" },
+        B1: { valor: "Cantidad", formula: "Cantidad", clase: "bold" },
+        C1: { valor: "Precio", formula: "Precio", clase: "bold" },
+        D1: { valor: "Subtotal", formula: "Subtotal", clase: "bold" },
+        E1: { valor: "IVA 16%", formula: "IVA 16%", clase: "bold" },
+        F1: { valor: "Total", formula: "Total", clase: "bold" },
+
+        A2: { valor: "Lápiz", formula: "Lápiz" },
+        B2: { valor: "10", formula: 10, clase: "num" },
+        C2: { valor: "$1.50", formula: 1.5, clase: "currency" },
+        D2: { valor: "$15.00", formula: "=B2*C2", clase: "currency" },
+        E2: { valor: "$2.40", formula: "=D2*0.16", clase: "currency" },
+        F2: { valor: "$17.40", formula: "=D2+E2", clase: "currency" },
+
+        A3: { valor: "Cuaderno", formula: "Cuaderno" },
+        B3: { valor: "5", formula: 5, clase: "num" },
+        C3: { valor: "$3.00", formula: 3.0, clase: "currency" },
+        D3: { valor: "$15.00", formula: "=B3*C3", clase: "currency" },
+        E3: { valor: "$2.40", formula: "=D3*0.16", clase: "currency" },
+        F3: { valor: "$17.40", formula: "=D3+E3", clase: "currency" },
+
+        A4: { valor: "Borrador", formula: "Borrador" },
+        B4: { valor: "20", formula: 20, clase: "num" },
+        C4: { valor: "$0.80", formula: 0.8, clase: "currency" },
+        D4: { valor: "$16.00", formula: "=B4*C4", clase: "currency" },
+        E4: { valor: "$2.56", formula: "=D4*0.16", clase: "currency" },
+        F4: { valor: "$18.56", formula: "=D4+E4", clase: "currency" },
+
+        A5: { valor: "Regla", formula: "Regla" },
+        B5: { valor: "3", formula: 3, clase: "num" },
+        C5: { valor: "$2.50", formula: 2.5, clase: "currency" },
+        D5: { valor: "$7.50", formula: "=B5*C5", clase: "currency" },
+        E5: { valor: "$1.20", formula: "=D5*0.16", clase: "currency" },
+        F5: { valor: "$8.70", formula: "=D5+E5", clase: "currency" },
+
+        A6: { valor: "Tijeras", formula: "Tijeras" },
+        B6: { valor: "8", formula: 8, clase: "num" },
+        C6: { valor: "$4.00", formula: 4.0, clase: "currency" },
+        D6: { valor: "$32.00", formula: "=B6*C6", clase: "currency" },
+        E6: { valor: "$5.12", formula: "=D6*0.16", clase: "currency" },
+        F6: { valor: "$37.12", formula: "=D6+E6", clase: "currency" },
+
+        A7: { valor: "Marcador", formula: "Marcador" },
+        B7: { valor: "12", formula: 12, clase: "num" },
+        C7: { valor: "$1.20", formula: 1.2, clase: "currency" },
+        D7: { valor: "$14.40", formula: "=B7*C7", clase: "currency" },
+        E7: { valor: "$2.30", formula: "=D7*0.16", clase: "currency" },
+        F7: { valor: "$16.70", formula: "=D7+E7", clase: "currency" },
+
+        A8: { valor: "Total", formula: "Total", clase: "bold" },
+        B8: { valor: "", formula: "" },
+        C8: { valor: "", formula: "" },
+        D8: {
+          valor: "$100.00",
+          formula: "=SUMA(D2:D7)",
+          clase: "currency bold",
+        },
+        E8: {
+          valor: "$16.00",
+          formula: "=SUMA(E2:E7)",
+          clase: "currency bold",
+        },
+        F8: {
+          valor: "$116.00",
+          formula: "=SUMA(F2:F7)",
+          clase: "currency bold",
+        },
+      };
+
+      /* ---------- Generar tabla ---------- */
+      const columnas = ["A", "B", "C", "D", "E", "F", "G", "H"];
+      const filas = 12;
+      const tbody = document.getElementById("sheetBody");
+
+      for (let r = 1; r <= filas; r++) {
+        const tr = document.createElement("tr");
+        const th = document.createElement("th");
+        th.className = "part";
+        th.dataset.parte = "encabezados-filas";
+        th.textContent = r;
+        tr.appendChild(th);
+
+        columnas.forEach((col) => {
+          const td = document.createElement("td");
+          const ref = col + r;
+          td.dataset.ref = ref;
+          td.className = "part cell";
+          td.dataset.parte = "celdas";
+
+          const data = celdas[ref];
+          if (data) {
+            td.textContent = data.valor;
+            if (data.clase) td.className += " " + data.clase;
+          }
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      }
+
+      /* ---------- Textos informativos ---------- */
+      const partes = {
+        "barra-titulo": {
+          titulo: "Barra de título",
+          texto:
+            "Muestra el nombre del libro (Libro1) y los botones Minimizar, Maximizar y Cerrar. A la izquierda están Guardar, Deshacer y Rehacer.",
+        },
+        cinta: {
+          titulo: "Cinta de opciones",
+          texto:
+            "Es la franja superior con pestañas (Inicio, Insertar, Disposición, Fórmulas…). Cada pestaña agrupa botones con herramientas relacionadas.",
+        },
+        "cuadro-nombre": {
+          titulo: "Cuadro de nombre",
+          texto:
+            "Muestra la referencia de la celda activa (por ejemplo A1, B2, C5). Al hacer clic en una celda, verás su referencia aquí.",
+        },
+        "barra-formulas": {
+          titulo: "Barra de fórmulas",
+          texto:
+            "Muestra el contenido real de la celda seleccionada: si contiene una fórmula, verás la fórmula (por ejemplo =B2*C2), no el resultado.",
+        },
+        "encabezados-columnas": {
+          titulo: "Encabezados de columnas",
+          texto:
+            "Son las letras A, B, C… que identifican cada columna. Junto al número de fila forman la referencia de una celda (ejemplo: D5).",
+        },
+        "encabezados-filas": {
+          titulo: "Encabezados de filas",
+          texto:
+            "Son los números 1, 2, 3… que identifican cada fila. Al combinarse con la letra de la columna forman la referencia (ejemplo: B3).",
+        },
+        celdas: {
+          titulo: "Celdas",
+          texto:
+            "Cada cruce entre fila y columna es una celda. Aquí se escriben datos, números, textos o fórmulas. Haz clic en cualquier celda para ver su referencia y contenido.",
+        },
+        "pestanas-hoja": {
+          titulo: "Pestañas de hoja",
+          texto:
+            "Permiten moverse entre las hojas del libro (Hoja1, Hoja2…). El botón + crea una hoja nueva y las flechas navegan si hay muchas.",
+        },
+        "barra-estado": {
+          titulo: "Barra de estado",
+          texto:
+            "Muestra información del estado de Excel: modo (Listo), accesibilidad, vistas del libro, control de zoom y porcentaje de zoom.",
+        },
+      };
+
+      const infoTitulo = document.getElementById("infoTitulo");
+      const infoTexto = document.getElementById("infoTexto");
+      const nameBoxText = document.getElementById("nameBoxText");
+      const formulaInput = document.getElementById("formulaInput");
+
+      /* ---------- Interacción con las partes ---------- */
+      document.querySelectorAll(".part").forEach((el) => {
+        el.addEventListener("click", () => {
+          document
+            .querySelectorAll(".part.highlight")
+            .forEach((h) => h.classList.remove("highlight"));
+          el.classList.add("highlight");
+
+          const parte = el.dataset.parte;
+          if (partes[parte]) {
+            infoTitulo.textContent = partes[parte].titulo;
+            infoTexto.textContent = partes[parte].texto;
+          }
+
+          // Si es una celda, actualizar name box + formula bar
+          if (el.classList.contains("cell")) {
+            document
+              .querySelectorAll("td.active")
+              .forEach((c) => c.classList.remove("active"));
+            el.classList.add("active");
+
+            const ref = el.dataset.ref;
+            const data = celdas[ref];
+            nameBoxText.textContent = ref;
+            formulaInput.textContent = data
+              ? String(data.formula)
+              : el.textContent || "";
+          }
+        });
+      });
+
+      /* ---------- Celda activa inicial ---------- */
+      window.addEventListener("load", () => {
+        const first = document.querySelector('td[data-ref="A1"]');
+        if (first) first.click();
+      });
+    </script>
+  </body>
+</html>
