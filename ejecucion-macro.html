@@ -1,0 +1,1582 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Laboratorio de Macros - Excel</title>
+    <style>
+      :root {
+        --green: #107c41;
+        --green-dark: #0e6b39;
+        --green-light: #e8f5e9;
+        --border: #d4d4d4;
+        --header-bg: #f5f5f5;
+        --text: #323130;
+        --text-muted: #605e5c;
+        --red: #c00000;
+        --record: #e81123;
+        --code-bg: #1e1e1e;
+        --code-keyword: #569cd6;
+        --code-func: #dcdcaa;
+        --code-str: #ce9178;
+        --code-num: #b5cea8;
+        --code-comment: #6a9955;
+        --code-property: #9cdcfe;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+        background: #ededed;
+        padding: 16px;
+        color: var(--text);
+        font-size: 13px;
+      }
+      .app {
+        max-width: 1180px;
+        margin: 0 auto;
+        background: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+      }
+
+      /* Header */
+      .app-header {
+        background: var(--green);
+        color: #fff;
+        padding: 14px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .app-header h1 {
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .app-header .status-badge {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .app-header .status-badge.recording {
+        background: var(--record);
+        animation: pulse 1.2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.65;
+        }
+      }
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #fff;
+      }
+
+      /* Mode tabs */
+      .mode-tabs {
+        display: flex;
+        background: var(--green);
+        padding: 0 20px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      }
+      .mode-tab {
+        padding: 8px 16px;
+        color: rgba(255, 255, 255, 0.85);
+        cursor: pointer;
+        font-size: 13px;
+        border-radius: 4px 4px 0 0;
+        user-select: none;
+      }
+      .mode-tab:hover {
+        background: rgba(255, 255, 255, 0.12);
+      }
+      .mode-tab.active {
+        background: #fff;
+        color: var(--green);
+        font-weight: 600;
+      }
+
+      /* Challenge selector */
+      .challenge-bar {
+        background: #fafafa;
+        border-bottom: 1px solid var(--border);
+        padding: 8px 20px;
+        display: none;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .challenge-bar.show {
+        display: flex;
+      }
+      .challenge-bar .label {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-right: 6px;
+      }
+      .challenge-btn {
+        padding: 5px 12px;
+        border: 1px solid var(--border);
+        background: #fff;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        font-family: inherit;
+        color: var(--text);
+      }
+      .challenge-btn:hover {
+        background: #f3f3f3;
+      }
+      .challenge-btn.active {
+        background: var(--green);
+        color: #fff;
+        border-color: var(--green);
+      }
+      .challenge-btn.done::after {
+        content: " ✓";
+        color: var(--green);
+        font-weight: bold;
+      }
+      .challenge-btn.active.done::after {
+        color: #fff;
+      }
+
+      /* Main layout */
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 0;
+        min-height: 500px;
+      }
+      @media (max-width: 900px) {
+        .main-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Left panel: toolbar + sheet */
+      .left-panel {
+        padding: 16px 20px;
+        border-right: 1px solid var(--border);
+      }
+
+      .challenge-info {
+        background: var(--green-light);
+        border-left: 3px solid var(--green);
+        padding: 10px 14px;
+        border-radius: 0 4px 4px 0;
+        margin-bottom: 14px;
+        display: none;
+      }
+      .challenge-info.show {
+        display: block;
+      }
+      .challenge-info h3 {
+        font-size: 14px;
+        color: var(--green);
+        margin-bottom: 4px;
+      }
+      .challenge-info p {
+        font-size: 13px;
+        line-height: 1.45;
+        color: var(--text);
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 8px;
+        background: #fafafa;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        margin-bottom: 8px;
+      }
+      .tool-group {
+        display: flex;
+        gap: 2px;
+        padding-right: 8px;
+        border-right: 1px solid var(--border);
+      }
+      .tool-group:last-child {
+        border-right: none;
+      }
+      .tool-btn {
+        width: 30px;
+        height: 30px;
+        border: 1px solid transparent;
+        background: #fff;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--text);
+        font-family: inherit;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s;
+      }
+      .tool-btn:hover {
+        background: #e6e6e6;
+        border-color: #c8c8c8;
+      }
+      .tool-btn:active {
+        background: #d0d0d0;
+      }
+      .tool-btn.bold {
+        font-weight: 700;
+        font-family: Georgia, serif;
+      }
+      .tool-btn.italic {
+        font-style: italic;
+        font-family: Georgia, serif;
+      }
+
+      .color-swatch {
+        width: 22px;
+        height: 22px;
+        border-radius: 3px;
+        border: 2px solid #fff;
+        cursor: pointer;
+        box-shadow: 0 0 0 1px var(--border);
+        transition: transform 0.1s;
+      }
+      .color-swatch:hover {
+        transform: scale(1.12);
+        box-shadow: 0 0 0 2px var(--green);
+      }
+      .color-swatch.erase {
+        background: #fff;
+        position: relative;
+        box-shadow: 0 0 0 1px var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-muted);
+        font-size: 14px;
+      }
+
+      /* Formula bar */
+      .formulabar {
+        display: flex;
+        border: 1px solid var(--border);
+        border-bottom: none;
+        background: #fff;
+        height: 28px;
+      }
+      .cell-ref {
+        width: 60px;
+        border-right: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        background: #fafafa;
+      }
+      .value-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        padding: 0 10px;
+        font-family: Calibri, "Segoe UI", sans-serif;
+        font-size: 13px;
+        background: transparent;
+      }
+      .value-input:focus {
+        background: #fffdf5;
+      }
+      .value-input:disabled {
+        background: #f5f5f5;
+        color: #999;
+      }
+
+      /* Sheet */
+      .sheet-wrap {
+        border: 1px solid var(--border);
+        border-radius: 0 0 4px 4px;
+        overflow: auto;
+        max-height: 400px;
+        background: #fff;
+      }
+      .sheet {
+        border-collapse: collapse;
+        table-layout: fixed;
+        font-family: Calibri, "Segoe UI", sans-serif;
+        font-size: 13px;
+        min-width: 100%;
+        user-select: none;
+      }
+      .sheet th,
+      .sheet td {
+        border: 1px solid var(--border);
+        height: 26px;
+        padding: 0 6px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        font-weight: normal;
+        width: 110px;
+      }
+      .sheet thead th {
+        background: var(--header-bg);
+        color: var(--text-muted);
+        text-align: center;
+        font-size: 11px;
+        font-weight: 600;
+        height: 22px;
+        width: 110px;
+        position: sticky;
+        top: 0;
+        z-index: 3;
+      }
+      .sheet thead th.corner {
+        width: 34px;
+        position: sticky;
+        left: 0;
+        top: 0;
+        z-index: 4;
+      }
+      .sheet tbody th {
+        background: var(--header-bg);
+        color: var(--text-muted);
+        text-align: center;
+        font-size: 11px;
+        font-weight: 600;
+        width: 34px;
+        position: sticky;
+        left: 0;
+        z-index: 2;
+      }
+      .sheet td {
+        cursor: cell;
+        transition: background 0.08s;
+      }
+      .sheet td.in-selection {
+        background: rgba(16, 124, 65, 0.12);
+      }
+      .sheet td.active {
+        outline: 2px solid var(--green);
+        outline-offset: -2px;
+        position: relative;
+      }
+      .sheet td.bold {
+        font-weight: 600;
+      }
+      .sheet td.italic {
+        font-style: italic;
+      }
+      .sheet td.with-color {
+        font-weight: 500;
+      }
+
+      /* Right panel: recorder */
+      .right-panel {
+        background: #252526;
+        color: #d4d4d4;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .recorder-header {
+        padding: 12px 16px;
+        background: #1e1e1e;
+        border-bottom: 1px solid #333;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .recorder-header h3 {
+        font-size: 13px;
+        font-weight: 600;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .recorder-status {
+        font-size: 11px;
+        color: #6a9955;
+        font-family: "Consolas", monospace;
+      }
+      .recorder-status.recording {
+        color: #f48771;
+        animation: pulse 1.2s infinite;
+      }
+
+      .code-panel {
+        flex: 1;
+        overflow: auto;
+        padding: 12px 16px;
+        font-family: "Consolas", "Courier New", monospace;
+        font-size: 12px;
+        line-height: 1.65;
+        background: var(--code-bg);
+        min-height: 200px;
+        max-height: 400px;
+      }
+      .code-panel .line {
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+      .code-panel .line-num {
+        color: #858585;
+        display: inline-block;
+        min-width: 22px;
+        margin-right: 8px;
+        user-select: none;
+        text-align: right;
+      }
+      .code-panel .kw {
+        color: var(--code-keyword);
+      }
+      .code-panel .fn {
+        color: var(--code-func);
+      }
+      .code-panel .str {
+        color: var(--code-str);
+      }
+      .code-panel .num {
+        color: var(--code-num);
+      }
+      .code-panel .cmt {
+        color: var(--code-comment);
+        font-style: italic;
+      }
+      .code-panel .prop {
+        color: var(--code-property);
+      }
+      .code-panel .empty-msg {
+        color: #6a6a6a;
+        font-style: italic;
+        text-align: center;
+        padding: 40px 0;
+      }
+
+      /* Actions bar */
+      .actions-bar {
+        padding: 10px 20px;
+        border-top: 1px solid var(--border);
+        background: #fafafa;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .btn {
+        padding: 8px 14px;
+        border: 1px solid var(--border);
+        background: #fff;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        color: var(--text);
+        font-family: inherit;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: background 0.15s;
+      }
+      .btn:hover {
+        background: #f3f3f3;
+      }
+      .btn:active {
+        background: #e6e6e6;
+      }
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .btn.record {
+        background: #fff;
+        color: var(--record);
+        border-color: var(--record);
+        font-weight: 600;
+      }
+      .btn.record.active {
+        background: var(--record);
+        color: #fff;
+      }
+      .btn.record.active::before {
+        content: "⏹";
+        margin-right: 2px;
+      }
+      .btn.record:not(.active)::before {
+        content: "⏺";
+        margin-right: 2px;
+        color: var(--record);
+      }
+      .btn.primary {
+        background: var(--green);
+        color: #fff;
+        border-color: var(--green);
+        font-weight: 600;
+      }
+      .btn.primary:hover {
+        background: var(--green-dark);
+        border-color: var(--green-dark);
+      }
+      .btn.nav {
+        margin-left: auto;
+      }
+
+      /* Feedback */
+      .feedback {
+        padding: 10px 20px;
+        border-top: 1px solid var(--border);
+        display: none;
+        font-size: 13px;
+      }
+      .feedback.show {
+        display: block;
+        animation: slideIn 0.25s ease;
+      }
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .feedback.success {
+        background: #e8f5e9;
+        border-top-color: var(--green);
+        color: var(--green-dark);
+      }
+      .feedback.error {
+        background: #fde7e9;
+        border-top-color: var(--red);
+        color: var(--red);
+      }
+      .feedback.info {
+        background: #e7f3ff;
+        border-top-color: #0078d4;
+        color: #005a9e;
+      }
+      .feedback strong {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 14px;
+      }
+      .feedback ul {
+        margin: 6px 0 0 20px;
+        font-size: 12px;
+      }
+      .feedback li {
+        margin-bottom: 2px;
+      }
+      .feedback code {
+        background: rgba(0, 0, 0, 0.06);
+        padding: 1px 5px;
+        border-radius: 3px;
+        font-family: "Consolas", monospace;
+        font-size: 12px;
+      }
+
+      @media (max-width: 600px) {
+        body {
+          padding: 8px;
+        }
+        .app-header h1 {
+          font-size: 15px;
+        }
+        .left-panel {
+          padding: 12px;
+        }
+        .actions-bar {
+          padding: 10px 12px;
+        }
+        .btn {
+          padding: 7px 10px;
+          font-size: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <div class="app-header">
+        <h1>🤖 Laboratorio de Macros de Excel</h1>
+        <div class="status-badge" id="statusBadge">
+          <span class="status-dot"></span>
+          <span id="statusText">Inactivo</span>
+        </div>
+      </div>
+
+      <div class="mode-tabs">
+        <div class="mode-tab active" data-mode="free">🧪 Modo libre</div>
+        <div class="mode-tab" data-mode="challenge">🎯 Desafíos</div>
+      </div>
+
+      <div class="challenge-bar" id="challengeBar">
+        <span class="label">Desafío:</span>
+        <!-- Botones generados por JS -->
+      </div>
+
+      <div class="main-grid">
+        <div class="left-panel">
+          <div class="challenge-info" id="challengeInfo">
+            <h3 id="challengeTitle"></h3>
+            <p id="challengeDesc"></p>
+          </div>
+
+          <div class="toolbar">
+            <div class="tool-group">
+              <button class="tool-btn bold" id="btnBold" title="Negrita">
+                B
+              </button>
+              <button class="tool-btn italic" id="btnItalic" title="Cursiva">
+                I
+              </button>
+            </div>
+            <div class="tool-group" id="colorGroup">
+              <span
+                style="
+                  font-size: 11px;
+                  color: #605e5c;
+                  align-self: center;
+                  margin-right: 4px;
+                "
+                >Fondo:</span
+              >
+              <!-- swatches generados por JS -->
+            </div>
+          </div>
+
+          <div class="formulabar">
+            <div class="cell-ref" id="cellRef">A1</div>
+            <input
+              type="text"
+              class="value-input"
+              id="valueInput"
+              placeholder="Escribe un valor y pulsa Enter…"
+              autocomplete="off"
+              spellcheck="false"
+            />
+          </div>
+
+          <div class="sheet-wrap">
+            <table class="sheet" id="sheet"></table>
+          </div>
+        </div>
+
+        <div class="right-panel">
+          <div class="recorder-header">
+            <h3>
+              <span>📝 Grabador de macros</span>
+            </h3>
+            <div class="recorder-status" id="recorderStatus">0 pasos</div>
+          </div>
+          <div class="code-panel" id="codePanel">
+            <div class="empty-msg">
+              Pulsa <b>⏺ Grabar</b> y realiza acciones en la hoja.<br />
+              Aquí verás el pseudocódigo VBA generado.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions-bar">
+        <button class="btn record" id="btnRecord">Grabar</button>
+        <button class="btn primary" id="btnRun" disabled>▶ Reproducir</button>
+        <button class="btn" id="btnClear" disabled>🗑 Limpiar macro</button>
+        <button class="btn" id="btnResetSheet">↺ Reiniciar hoja</button>
+        <button class="btn primary" id="btnTest" style="display: none">
+          ✓ Probar desafío
+        </button>
+      </div>
+
+      <div class="feedback" id="feedback"></div>
+    </div>
+
+    <script>
+      /* ============================================================
+   CONFIGURACIÓN
+   ============================================================ */
+      const ROWS = 8;
+      const COLS = 6;
+
+      const COLORS = {
+        yellow: { hex: "#FFFF00", name: "Amarillo", rgb: [255, 255, 0] },
+        green: { hex: "#92D050", name: "Verde", rgb: [146, 208, 80] },
+        blue: { hex: "#00B0F0", name: "Azul", rgb: [0, 176, 240] },
+        red: { hex: "#FF0000", name: "Rojo", rgb: [255, 0, 0] },
+        orange: { hex: "#FFC000", name: "Naranja", rgb: [255, 192, 0] },
+        gray: { hex: "#D9D9D9", name: "Gris", rgb: [217, 217, 217] },
+      };
+
+      function colLetter(c) {
+        return String.fromCharCode(65 + c);
+      }
+      function cellRef(r, c) {
+        return colLetter(c) + (r + 1);
+      }
+      function parseRange(rangeStr) {
+        const [a, b] = rangeStr.includes(":")
+          ? rangeStr.split(":")
+          : [rangeStr, rangeStr];
+        const pa = a.match(/^([A-Z]+)(\d+)$/);
+        const pb = b.match(/^([A-Z]+)(\d+)$/);
+        if (!pa || !pb) return null;
+        const c1 = pa[1].charCodeAt(0) - 65,
+          r1 = parseInt(pa[2]) - 1;
+        const c2 = pb[1].charCodeAt(0) - 65,
+          r2 = parseInt(pb[2]) - 1;
+        return {
+          r1: Math.min(r1, r2),
+          r2: Math.max(r1, r2),
+          c1: Math.min(c1, c2),
+          c2: Math.max(c1, c2),
+        };
+      }
+
+      /* ============================================================
+   ESTADO
+   ============================================================ */
+      let state = {
+        sheet: null,
+        initialSheet: null,
+        recording: [],
+        isRecording: false,
+        selection: { r1: 0, c1: 0, r2: 0, c2: 0 },
+        mode: "free",
+        currentChallenge: null,
+        completed: new Set(),
+      };
+
+      function createEmptySheet() {
+        const s = [];
+        for (let r = 0; r < ROWS; r++) {
+          const row = [];
+          for (let c = 0; c < COLS; c++) {
+            row.push({ value: "", bold: false, italic: false, bgColor: "" });
+          }
+          s.push(row);
+        }
+        return s;
+      }
+      function cloneSheet(s) {
+        return s.map((row) => row.map((cell) => ({ ...cell })));
+      }
+      function setSheetValues(s, values) {
+        // values: { "A1": "texto", "B2": 123, ... }
+        for (const ref in values) {
+          const m = ref.match(/^([A-Z]+)(\d+)$/);
+          if (!m) continue;
+          const c = m[1].charCodeAt(0) - 65;
+          const r = parseInt(m[2]) - 1;
+          if (r >= 0 && r < ROWS && c >= 0 && c < COLS) {
+            s[r][c].value = String(values[ref]);
+          }
+        }
+        return s;
+      }
+
+      /* ============================================================
+   DESAFÍOS
+   ============================================================ */
+      const CHALLENGES = [
+        {
+          title: "Encabezado destacado",
+          description:
+            "En la hoja tienes una tabla de datos. Tu tarea: pon en negrita y fondo amarillo los encabezados de la fila 1 (A1:F1).",
+          initialData: {
+            A1: "Nombre",
+            B1: "Edad",
+            C1: "Ciudad",
+            D1: "País",
+            E1: "Email",
+            F1: "Tel",
+            A2: "Ana",
+            B2: "28",
+            C2: "Madrid",
+            D2: "España",
+            A3: "Luis",
+            B3: "34",
+            C3: "Bogotá",
+            D3: "Colombia",
+            A4: "María",
+            B4: "22",
+            C4: "Lima",
+            D4: "Perú",
+            A5: "Pedro",
+            B5: "41",
+            C5: "Buenos Aires",
+            D5: "Argentina",
+          },
+          buildTarget: (sheet) => {
+            const t = cloneSheet(sheet);
+            for (let c = 0; c < 6; c++) {
+              t[0][c].bold = true;
+              t[0][c].bgColor = COLORS.yellow.hex;
+            }
+            return t;
+          },
+        },
+        {
+          title: "Marcar productos agotados",
+          description:
+            'En la columna C escribe "Agotado" en las celdas C2:C4 (los tres primeros productos) y aplícales fondo rojo.',
+          initialData: {
+            A1: "Producto",
+            B1: "Stock",
+            C1: "Estado",
+            A2: "Lápiz",
+            B2: "0",
+            A3: "Cuaderno",
+            B3: "0",
+            A4: "Regla",
+            B4: "0",
+            A5: "Borrador",
+            B5: "50",
+            A6: "Marcador",
+            B6: "120",
+          },
+          buildTarget: (sheet) => {
+            const t = cloneSheet(sheet);
+            for (let r = 1; r <= 3; r++) {
+              t[r][2].value = "Agotado";
+              t[r][2].bgColor = COLORS.red.hex;
+            }
+            return t;
+          },
+        },
+        {
+          title: "Fila de totales",
+          description:
+            'En A5 escribe "TOTAL". Aplica negrita a toda la fila 5 (A5:D5) y ponle fondo gris.',
+          initialData: {
+            A1: "Concepto",
+            B1: "Ene",
+            C1: "Feb",
+            D1: "Mar",
+            A2: "Ventas",
+            B2: "1000",
+            C2: "1200",
+            D2: "900",
+            A3: "Gastos",
+            B3: "500",
+            C3: "600",
+            D3: "400",
+            A4: "Beneficio",
+            B4: "500",
+            C4: "600",
+            D4: "500",
+          },
+          buildTarget: (sheet) => {
+            const t = cloneSheet(sheet);
+            t[4][0].value = "TOTAL";
+            for (let c = 0; c < 4; c++) {
+              t[4][c].bold = true;
+              t[4][c].bgColor = COLORS.gray.hex;
+            }
+            return t;
+          },
+        },
+        {
+          title: "Alerta importante",
+          description:
+            'En la celda B2 escribe "IMPORTANTE". Aplícale negrita, cursiva y fondo naranja.',
+          initialData: {
+            A1: "Aviso",
+            B1: "Estado",
+            A2: "Revisión",
+            B2: "",
+            A3: "Entrega",
+            B3: "",
+          },
+          buildTarget: (sheet) => {
+            const t = cloneSheet(sheet);
+            t[1][1].value = "IMPORTANTE";
+            t[1][1].bold = true;
+            t[1][1].italic = true;
+            t[1][1].bgColor = COLORS.orange.hex;
+            return t;
+          },
+        },
+      ];
+
+      /* ============================================================
+   APLICAR ACCIONES
+   ============================================================ */
+      function applyAction(sheet, action) {
+        const range = parseRange(action.range);
+        if (!range) return;
+        for (let r = range.r1; r <= range.r2; r++) {
+          for (let c = range.c1; c <= range.c2; c++) {
+            const cell = sheet[r][c];
+            switch (action.type) {
+              case "bold":
+                cell.bold = action.value;
+                break;
+              case "italic":
+                cell.italic = action.value;
+                break;
+              case "color":
+                cell.bgColor = action.value;
+                break;
+              case "value":
+                cell.value = action.value;
+                break;
+            }
+          }
+        }
+      }
+
+      /* ============================================================
+   CÓDIGO VBA (pseudocódigo)
+   ============================================================ */
+      function escapeVBAString(s) {
+        return String(s).replace(/"/g, '""');
+      }
+
+      function actionToCode(action) {
+        switch (action.type) {
+          case "bold":
+            return `Range("${action.range}").Font.Bold = ${action.value ? "True" : "False"}`;
+          case "italic":
+            return `Range("${action.range}").Font.Italic = ${action.value ? "True" : "False"}`;
+          case "color": {
+            const color = Object.values(COLORS).find(
+              (c) => c.hex === action.value,
+            );
+            if (color) {
+              return `Range("${action.range}").Interior.Color = RGB(${color.rgb.join(", ")})  ' ${color.name}`;
+            }
+            return `Range("${action.range}").Interior.Pattern = xlNone`;
+          }
+          case "value":
+            return `Range("${action.range}").Value = "${escapeVBAString(action.value)}"`;
+          default:
+            return "";
+        }
+      }
+
+      function highlightVBA(code) {
+        const parts = [];
+        // Aproximación de resaltado básico
+        const regex =
+          /("(?:[^"]|"")*")|(\b(?:Range|RGB)\b)|(\b(?:True|False)\b)|(\b\d+\b)|('.*$)/g;
+        let lastIdx = 0,
+          match;
+        while ((match = regex.exec(code)) !== null) {
+          if (match.index > lastIdx)
+            parts.push({ t: "plain", v: code.slice(lastIdx, match.index) });
+          if (match[1]) parts.push({ t: "str", v: match[1] });
+          else if (match[2]) parts.push({ t: "fn", v: match[2] });
+          else if (match[3]) parts.push({ t: "kw", v: match[3] });
+          else if (match[4]) parts.push({ t: "num", v: match[4] });
+          else if (match[5]) parts.push({ t: "cmt", v: match[5] });
+          lastIdx = match.index + match[0].length;
+        }
+        if (lastIdx < code.length)
+          parts.push({ t: "plain", v: code.slice(lastIdx) });
+        return parts
+          .map((p) => {
+            const esc = escapeHtml(p.v);
+            if (p.t === "plain") return esc;
+            return `<span class="${p.t}">${esc}</span>`;
+          })
+          .join("");
+      }
+
+      /* ============================================================
+   RENDERIZADO
+   ============================================================ */
+      const el = {
+        statusBadge: document.getElementById("statusBadge"),
+        statusText: document.getElementById("statusText"),
+        challengeBar: document.getElementById("challengeBar"),
+        challengeInfo: document.getElementById("challengeInfo"),
+        challengeTitle: document.getElementById("challengeTitle"),
+        challengeDesc: document.getElementById("challengeDesc"),
+        sheet: document.getElementById("sheet"),
+        cellRef: document.getElementById("cellRef"),
+        valueInput: document.getElementById("valueInput"),
+        codePanel: document.getElementById("codePanel"),
+        recorderStatus: document.getElementById("recorderStatus"),
+        btnRecord: document.getElementById("btnRecord"),
+        btnRun: document.getElementById("btnRun"),
+        btnClear: document.getElementById("btnClear"),
+        btnResetSheet: document.getElementById("btnResetSheet"),
+        btnTest: document.getElementById("btnTest"),
+        btnBold: document.getElementById("btnBold"),
+        btnItalic: document.getElementById("btnItalic"),
+        colorGroup: document.getElementById("colorGroup"),
+        feedback: document.getElementById("feedback"),
+      };
+
+      function renderSheet() {
+        el.sheet.innerHTML = "";
+        const thead = document.createElement("thead");
+        const trH = document.createElement("tr");
+        const corner = document.createElement("th");
+        corner.className = "corner";
+        trH.appendChild(corner);
+        for (let c = 0; c < COLS; c++) {
+          const th = document.createElement("th");
+          th.textContent = colLetter(c);
+          trH.appendChild(th);
+        }
+        thead.appendChild(trH);
+        el.sheet.appendChild(thead);
+
+        const tbody = document.createElement("tbody");
+        for (let r = 0; r < ROWS; r++) {
+          const tr = document.createElement("tr");
+          const rowHeader = document.createElement("th");
+          rowHeader.textContent = r + 1;
+          tr.appendChild(rowHeader);
+
+          for (let c = 0; c < COLS; c++) {
+            const td = document.createElement("td");
+            td.dataset.row = r;
+            td.dataset.col = c;
+            const cell = state.sheet[r][c];
+
+            td.textContent = cell.value;
+            if (cell.bold) td.classList.add("bold");
+            if (cell.italic) td.classList.add("italic");
+            if (cell.bgColor) td.style.background = cell.bgColor;
+
+            if (isInSelection(r, c)) td.classList.add("in-selection");
+            if (r === state.selection.r1 && c === state.selection.c1)
+              td.classList.add("active");
+
+            tr.appendChild(td);
+          }
+          tbody.appendChild(tr);
+        }
+        el.sheet.appendChild(tbody);
+
+        const active = state.sheet[state.selection.r1][state.selection.c1];
+        el.cellRef.textContent = cellRef(
+          state.selection.r1,
+          state.selection.c1,
+        );
+        if (document.activeElement !== el.valueInput) {
+          el.valueInput.value = active.value;
+        }
+      }
+
+      function isInSelection(r, c) {
+        return (
+          r >= state.selection.r1 &&
+          r <= state.selection.r2 &&
+          c >= state.selection.c1 &&
+          c <= state.selection.c2
+        );
+      }
+
+      function selectionRange() {
+        const { r1, c1, r2, c2 } = state.selection;
+        const a = cellRef(r1, c1);
+        const b = cellRef(r2, c2);
+        return a === b ? a : `${a}:${b}`;
+      }
+
+      function renderCode() {
+        if (state.recording.length === 0) {
+          el.codePanel.innerHTML =
+            '<div class="empty-msg">Pulsa <b>⏺ Grabar</b> y realiza acciones en la hoja.<br>Aquí verás el pseudocódigo VBA generado.</div>';
+          el.recorderStatus.textContent = "0 pasos";
+          el.btnRun.disabled = true;
+          el.btnClear.disabled = true;
+          return;
+        }
+        let html =
+          '<div class="line"><span class="kw">Sub</span> <span class="fn">MiMacro</span>()</div>';
+        state.recording.forEach((action, i) => {
+          const code = actionToCode(action);
+          html += `<div class="line"><span class="line-num">${i + 1}</span>    ${highlightVBA(code)}</div>`;
+        });
+        html += '<div class="line"><span class="kw">End Sub</span></div>';
+        el.codePanel.innerHTML = html;
+        el.codePanel.scrollTop = el.codePanel.scrollHeight;
+        el.recorderStatus.textContent =
+          state.recording.length +
+          " paso" +
+          (state.recording.length !== 1 ? "s" : "");
+        el.btnRun.disabled = false;
+        el.btnClear.disabled = false;
+      }
+
+      function renderStatus() {
+        if (state.isRecording) {
+          el.statusBadge.classList.add("recording");
+          el.statusText.textContent = "Grabando…";
+          el.btnRecord.textContent = "Detener";
+          el.btnRecord.classList.add("active");
+        } else {
+          el.statusBadge.classList.remove("recording");
+          el.statusText.textContent =
+            state.recording.length > 0 ? "Macro lista" : "Inactivo";
+          el.btnRecord.textContent = "Grabar";
+          el.btnRecord.classList.remove("active");
+        }
+      }
+
+      function renderChallengeBar() {
+        el.challengeBar.innerHTML = '<span class="label">Desafío:</span>';
+        CHALLENGES.forEach((ch, i) => {
+          const btn = document.createElement("button");
+          btn.className = "challenge-btn";
+          if (i === state.currentChallenge) btn.classList.add("active");
+          if (state.completed.has(i)) btn.classList.add("done");
+          btn.textContent = i + 1 + ". " + ch.title;
+          btn.addEventListener("click", () => loadChallenge(i));
+          el.challengeBar.appendChild(btn);
+        });
+      }
+
+      function renderChallengeInfo() {
+        if (state.mode === "challenge" && state.currentChallenge !== null) {
+          const ch = CHALLENGES[state.currentChallenge];
+          el.challengeInfo.classList.add("show");
+          el.challengeTitle.textContent = "🎯 " + ch.title;
+          el.challengeDesc.textContent = ch.description;
+          el.btnTest.style.display = "inline-flex";
+        } else {
+          el.challengeInfo.classList.remove("show");
+          el.btnTest.style.display = "none";
+        }
+      }
+
+      /* ============================================================
+   INTERACCIÓN CON LA HOJA
+   ============================================================ */
+      let dragStart = null;
+
+      el.sheet.addEventListener("mousedown", (e) => {
+        const td = e.target.closest("td");
+        if (!td) return;
+        if (e.button !== 0) return;
+        const r = parseInt(td.dataset.row);
+        const c = parseInt(td.dataset.col);
+        dragStart = { r, c };
+        state.selection = { r1: r, c1: c, r2: r, c2: c };
+        renderSheet();
+        e.preventDefault();
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        if (!dragStart) return;
+        const td = document
+          .elementFromPoint(e.clientX, e.clientY)
+          ?.closest("td");
+        if (!td) return;
+        const r = parseInt(td.dataset.row);
+        const c = parseInt(td.dataset.col);
+        state.selection = {
+          r1: Math.min(dragStart.r, r),
+          r2: Math.max(dragStart.r, r),
+          c1: Math.min(dragStart.c, c),
+          c2: Math.max(dragStart.c, c),
+        };
+        renderSheet();
+      });
+
+      document.addEventListener("mouseup", () => {
+        dragStart = null;
+      });
+
+      /* ============================================================
+   ACCIONES DEL USUARIO
+   ============================================================ */
+      function recordAction(action) {
+        if (state.isRecording) {
+          state.recording.push(action);
+          renderCode();
+          renderStatus();
+        }
+      }
+
+      el.btnBold.addEventListener("click", () => {
+        const rng = state.selection;
+        const firstCell = state.sheet[rng.r1][rng.c1];
+        const newValue = !firstCell.bold;
+        for (let r = rng.r1; r <= rng.r2; r++) {
+          for (let c = rng.c1; c <= rng.c2; c++) {
+            state.sheet[r][c].bold = newValue;
+          }
+        }
+        recordAction({
+          type: "bold",
+          range: selectionRange(),
+          value: newValue,
+        });
+        renderSheet();
+      });
+
+      el.btnItalic.addEventListener("click", () => {
+        const rng = state.selection;
+        const firstCell = state.sheet[rng.r1][rng.c1];
+        const newValue = !firstCell.italic;
+        for (let r = rng.r1; r <= rng.r2; r++) {
+          for (let c = rng.c1; c <= rng.c2; c++) {
+            state.sheet[r][c].italic = newValue;
+          }
+        }
+        recordAction({
+          type: "italic",
+          range: selectionRange(),
+          value: newValue,
+        });
+        renderSheet();
+      });
+
+      function buildColorSwatches() {
+        const erase = document.createElement("div");
+        erase.className = "color-swatch erase";
+        erase.textContent = "×";
+        erase.title = "Sin color";
+        erase.addEventListener("click", () => {
+          const rng = state.selection;
+          for (let r = rng.r1; r <= rng.r2; r++) {
+            for (let c = rng.c1; c <= rng.c2; c++) {
+              state.sheet[r][c].bgColor = "";
+            }
+          }
+          recordAction({ type: "color", range: selectionRange(), value: "" });
+          renderSheet();
+        });
+        el.colorGroup.appendChild(erase);
+
+        Object.values(COLORS).forEach((color) => {
+          const sw = document.createElement("div");
+          sw.className = "color-swatch";
+          sw.style.background = color.hex;
+          sw.title = color.name;
+          sw.addEventListener("click", () => {
+            const rng = state.selection;
+            for (let r = rng.r1; r <= rng.r2; r++) {
+              for (let c = rng.c1; c <= rng.c2; c++) {
+                state.sheet[r][c].bgColor = color.hex;
+              }
+            }
+            recordAction({
+              type: "color",
+              range: selectionRange(),
+              value: color.hex,
+            });
+            renderSheet();
+          });
+          el.colorGroup.appendChild(sw);
+        });
+      }
+
+      el.valueInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          const value = el.valueInput.value;
+          const rng = state.selection;
+          // Aplicar solo a la celda activa (top-left de la selección)
+          state.sheet[rng.r1][rng.c1].value = value;
+          recordAction({
+            type: "value",
+            range: cellRef(rng.r1, rng.c1),
+            value: value,
+          });
+          renderSheet();
+          el.valueInput.blur();
+        }
+      });
+
+      /* ============================================================
+   GRABAR / REPRODUCIR
+   ============================================================ */
+      el.btnRecord.addEventListener("click", () => {
+        if (state.isRecording) {
+          // Detener
+          state.isRecording = false;
+          renderStatus();
+          showFeedback(
+            "info",
+            "Grabación detenida",
+            "Tu macro tiene " +
+              state.recording.length +
+              ' paso(s). Puedes reproducirla con "▶ Reproducir" o probarla si estás en un desafío.',
+          );
+        } else {
+          // Iniciar
+          if (state.recording.length > 0) {
+            // Preguntar si quiere borrar la grabación actual
+            if (
+              !confirm(
+                "Ya hay una grabación. ¿Quieres borrarla y empezar una nueva?",
+              )
+            )
+              return;
+            state.recording = [];
+            renderCode();
+          }
+          state.isRecording = true;
+          renderStatus();
+          hideFeedback();
+        }
+      });
+
+      el.btnClear.addEventListener("click", () => {
+        if (!confirm("¿Borrar la macro grabada?")) return;
+        state.recording = [];
+        state.isRecording = false;
+        renderCode();
+        renderStatus();
+        hideFeedback();
+      });
+
+      el.btnResetSheet.addEventListener("click", () => {
+        if (!confirm("¿Reiniciar la hoja al estado inicial?")) return;
+        state.sheet = cloneSheet(state.initialSheet);
+        renderSheet();
+        hideFeedback();
+      });
+
+      el.btnRun.addEventListener("click", async () => {
+        if (state.recording.length === 0) return;
+        state.isRecording = false;
+        renderStatus();
+
+        // Reset a estado inicial
+        state.sheet = cloneSheet(state.initialSheet);
+        renderSheet();
+
+        // Reproducir con animación
+        for (const action of state.recording) {
+          applyAction(state.sheet, action);
+          renderSheet();
+          await sleep(180);
+        }
+        showFeedback(
+          "success",
+          "▶ Macro reproducida",
+          "Se ejecutaron " +
+            state.recording.length +
+            " paso(s) correctamente sobre la hoja.",
+        );
+      });
+
+      function sleep(ms) {
+        return new Promise((r) => setTimeout(r, ms));
+      }
+
+      /* ============================================================
+   DESAFÍOS
+   ============================================================ */
+      el.btnTest.addEventListener("click", () => {
+        if (state.currentChallenge === null) return;
+        if (state.recording.length === 0) {
+          showFeedback(
+            "error",
+            "Macro vacía",
+            "Primero debes grabar una macro con al menos una acción.",
+          );
+          return;
+        }
+        const ch = CHALLENGES[state.currentChallenge];
+
+        // Ejecutar grabación sobre copia de la hoja inicial
+        const testSheet = cloneSheet(state.initialSheet);
+        for (const action of state.recording) {
+          applyAction(testSheet, action);
+        }
+
+        // Construir objetivo
+        const target = ch.buildTarget(state.initialSheet);
+
+        // Comparar
+        const diffs = findDifferences(testSheet, target);
+
+        if (diffs.length === 0) {
+          state.completed.add(state.currentChallenge);
+          renderChallengeBar();
+          showFeedback(
+            "success",
+            "✅ ¡Desafío completado!",
+            "Tu macro produce exactamente el resultado esperado en las " +
+              ROWS * COLS +
+              " celdas de la hoja.",
+          );
+        } else {
+          let html = `<strong>❌ El resultado no es el esperado</strong>`;
+          html += `<div>Hay ${diffs.length} celda(s) que no coinciden con el objetivo. Revisa los detalles:</div>`;
+          html += "<ul>";
+          diffs.slice(0, 8).forEach((d) => {
+            const parts = [];
+            if (d.actual.value !== d.expected.value) {
+              parts.push(
+                `valor: "${d.actual.value}" → debería ser "${d.expected.value}"`,
+              );
+            }
+            if (d.actual.bold !== d.expected.bold) {
+              parts.push(
+                `negrita: ${d.actual.bold ? "sí" : "no"} → debería ser ${d.expected.bold ? "sí" : "no"}`,
+              );
+            }
+            if (d.actual.italic !== d.expected.italic) {
+              parts.push(
+                `cursiva: ${d.actual.italic ? "sí" : "no"} → debería ser ${d.expected.italic ? "sí" : "no"}`,
+              );
+            }
+            if (d.actual.bgColor !== d.expected.bgColor) {
+              parts.push(
+                `color: "${d.actual.bgColor || "ninguno"}" → debería ser "${d.expected.bgColor || "ninguno"}"`,
+              );
+            }
+            html += `<li><code>${d.ref}</code>: ${parts.join("; ")}</li>`;
+          });
+          if (diffs.length > 8)
+            html += `<li><em>…y ${diffs.length - 8} más</em></li>`;
+          html += "</ul>";
+          el.feedback.innerHTML = html;
+          el.feedback.className = "feedback error show";
+        }
+      });
+
+      function findDifferences(actual, expected) {
+        const diffs = [];
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            const a = actual[r][c];
+            const e = expected[r][c];
+            if (
+              a.value !== e.value ||
+              a.bold !== e.bold ||
+              a.italic !== e.italic ||
+              a.bgColor !== e.bgColor
+            ) {
+              diffs.push({ ref: cellRef(r, c), actual: a, expected: e });
+            }
+          }
+        }
+        return diffs;
+      }
+
+      /* ============================================================
+   MODO LIBRE / DESAFÍOS
+   ============================================================ */
+      document.querySelectorAll(".mode-tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          const mode = tab.dataset.mode;
+          if (mode === state.mode) return;
+          if (state.isRecording) {
+            if (!confirm("Hay una grabación en curso. ¿Salir y detenerla?"))
+              return;
+            state.isRecording = false;
+          }
+          document
+            .querySelectorAll(".mode-tab")
+            .forEach((t) => t.classList.remove("active"));
+          tab.classList.add("active");
+          state.mode = mode;
+
+          if (mode === "challenge") {
+            el.challengeBar.classList.add("show");
+            if (state.currentChallenge === null) {
+              loadChallenge(0);
+            } else {
+              loadChallenge(state.currentChallenge);
+            }
+          } else {
+            el.challengeBar.classList.remove("show");
+            state.currentChallenge = null;
+            // Reset al modo libre
+            state.sheet = createEmptySheet();
+            state.initialSheet = createEmptySheet();
+            state.recording = [];
+            state.selection = { r1: 0, c1: 0, r2: 0, c2: 0 };
+            renderSheet();
+            renderCode();
+            renderStatus();
+            renderChallengeInfo();
+            hideFeedback();
+          }
+        });
+      });
+
+      function loadChallenge(idx) {
+        const ch = CHALLENGES[idx];
+        state.currentChallenge = idx;
+
+        // Construir hoja inicial
+        const initial = createEmptySheet();
+        setSheetValues(initial, ch.initialData);
+        state.initialSheet = initial;
+        state.sheet = cloneSheet(initial);
+
+        // Reiniciar grabación
+        state.recording = [];
+        state.isRecording = false;
+        state.selection = { r1: 0, c1: 0, r2: 0, c2: 0 };
+
+        renderSheet();
+        renderCode();
+        renderStatus();
+        renderChallengeBar();
+        renderChallengeInfo();
+        hideFeedback();
+      }
+
+      /* ============================================================
+   FEEDBACK
+   ============================================================ */
+      function showFeedback(type, title, text) {
+        el.feedback.className = "feedback show " + type;
+        el.feedback.innerHTML = `<strong>${escapeHtml(title)}</strong><div>${escapeHtml(text)}</div>`;
+      }
+      function hideFeedback() {
+        el.feedback.classList.remove("show");
+      }
+      function escapeHtml(s) {
+        return String(s).replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      }
+
+      /* ============================================================
+   INICIALIZACIÓN
+   ============================================================ */
+      function init() {
+        state.sheet = createEmptySheet();
+        state.initialSheet = createEmptySheet();
+        buildColorSwatches();
+        renderSheet();
+        renderCode();
+        renderStatus();
+        renderChallengeBar();
+        renderChallengeInfo();
+      }
+      init();
+    </script>
+  </body>
+</html>
